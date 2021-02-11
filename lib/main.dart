@@ -12,10 +12,17 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Othello Game',
-      theme: ThemeData.dark().copyWith(
-
-      ),
-      home: HomePage(),
+      theme: ThemeData.dark().copyWith(),
+      home: MainPage(),
     );
   }
 }
+
+class MainPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    return HomePage(screenWidth);
+  }
+}
+

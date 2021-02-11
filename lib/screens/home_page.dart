@@ -1,22 +1,25 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:image_sequence_animator/image_sequence_animator.dart';
+import 'package:flutter/rendering.dart';
+import 'package:othello/components/piece.dart';
 
 class HomePage extends StatefulWidget {
+  HomePage(this.screenWidth);
+
+  final double screenWidth;
+
   @override
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  List<List<ImageSequenceAnimatorState>> imageSequenceAnimators = [];
+  double boardWidth;
+  double cellWidth;
 
   @override
   void initState() {
-    imageSequenceAnimators.length = 8;
-    for (int i = 0; i < 8; i++) {
-      imageSequenceAnimators[i] = [];
-      imageSequenceAnimators[i].length = 8;
-    }
+    boardWidth = widget.screenWidth - 50;
+    cellWidth = boardWidth / 8;
     super.initState();
   }
 
@@ -25,34 +28,25 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(title: Text("Othello Game")),
       body: Padding(
-        padding: EdgeInsets.all(25),
+        padding: const EdgeInsets.all(15),
         child: Center(
-          child: FittedBox(
-            child: Column(
-              children: List.generate(
-                8,
-                (i) => Row(
+          child: Container(
+            color: Colors.brown,
+            padding: const EdgeInsets.all(9),
+            child: Container(
+              padding: const EdgeInsets.all(1),
+              color: Colors.black,
+              child: Container(
+                color: Colors.green[700],
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: List.generate(
-                    8,
-                    (j) => FittedBox(
-                      child: InkWell(
-                        onTap: () {
-                          imageSequenceAnimators[i][j].restart();
-                        },
-                        child: ImageSequenceAnimator(
-                          "assets/flip_0",
-                          "frame_",
-                          0,
-                          1,
-                          "png",
-                          19,
-                          fps: 33,
-                          onReadyToPlay: (state) =>
-                              imageSequenceAnimators[i][j] = state,
-                        ),
-                      ),
-                    ),
-                  ),
+                      8,
+                          (i) => Row(
+                        children: List.generate(
+                            8,
+                                (j) => Piece(cellWidth)),
+                      )),
                 ),
               ),
             ),
