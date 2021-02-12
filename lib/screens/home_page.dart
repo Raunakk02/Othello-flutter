@@ -12,21 +12,28 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
   double boardWidth;
   double cellWidth;
   List<Widget> mainStack;
   List<List<int>> board = [];
-  int eraseI, eraseJ;
+  List<List<Function>> cellStateFns = [];
+  bool whiteTurn = true;
 
   @override
   void initState() {
     boardWidth = widget.screenWidth - 50;
     cellWidth = boardWidth / 8;
+    cellStateFns.length = 8;
     for (int i = 0; i < 8; i++) {
+      cellStateFns[i] = [];
+      cellStateFns[i].length = 8;
       board.add([]);
-      for (int j = 0; j < 8; j++) board[i].add(0);
+      for (int j = 0; j < 8; j++) board[i].add(-1);
     }
+
+    initBoard();
 
     mainStack = [
       Column(
@@ -50,10 +57,9 @@ class _HomePageState extends State<HomePage> {
                                   child:
                                       Image.asset("assets/flip_0/frame_18.png"),
                                 );
-                              Function callStateFn = () {
+                              cellStateFns[i][j] = () {
                                 setCellState(() {
                                   board[i][j] = (board[i][j] + 1) % 4;
-                                  print(board[i][j]);
                                 });
                               };
                               return Container(
@@ -62,14 +68,17 @@ class _HomePageState extends State<HomePage> {
                                 height: cellWidth,
                                 color: Colors.black,
                                 child: InkWell(
-                                  onTap: () {
-                                    mainStack.add(piece(i, j, callStateFn));
-                                    print("calling to erase bg");
-                                    callStateFn();
-                                    setState(() {});
+                                  onTap: () async {
+                                    if (board[i][j] == -1) {
+                                      if (!whiteTurn) board[i][j] = 1;
+                                      whiteTurn = !whiteTurn;
+                                      cellStateFns[i][j]();
+                                      return;
+                                    }
+                                    _flip(i, j);
                                   },
                                   child: Container(
-                                    color: Colors.green,
+                                    color: Colors.green[600],
                                     child: child,
                                   ),
                                 ),
@@ -80,6 +89,13 @@ class _HomePageState extends State<HomePage> {
       ),
     ];
     super.initState();
+  }
+
+  void initBoard() {
+    board[3][3] = 0;
+    board[4][4] = 0;
+    board[3][4] = 2;
+    board[4][3] = 2;
   }
 
   @override
@@ -95,7 +111,7 @@ class _HomePageState extends State<HomePage> {
             child: Container(
               width: widget.screenWidth - 50,
               height: widget.screenWidth - 50,
-              color: Colors.green[700],
+              color: Colors.green[600],
               child: Stack(
                 children: mainStack,
               ),
@@ -106,14 +122,20 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget piece(int i, int j, Function callStateFunction) {
+  void _flip(int i, int j) {
+    mainStack.add(piece(i, j));
+    cellStateFns[i][j]();
+    setState(() {});
+  }
+
+  Widget piece(int i, int j) {
     final _onFinishPlaying = (state) {
       if (board[i][j] % 2 == 0) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        callStateFunction();
         setState(() {
-          mainStack.removeLast();
+          mainStack.length = 1;
         });
+        cellStateFns[i][j]();
       });
     };
     return Positioned(
@@ -124,28 +146,17 @@ class _HomePageState extends State<HomePage> {
         height: cellWidth * (90 / 74),
         child: FittedBox(
           child: InkWell(
-            child: board[i][j] == 0
-                ? ImageSequenceAnimator(
-                    "assets/flip_0",
-                    "frame_",
-                    0,
-                    1,
-                    "png",
-                    19,
-                    fps: 33,
-                    onFinishPlaying: _onFinishPlaying,
-                  )
-                : ImageSequenceAnimator(
-                    "assets/flip_1",
-                    "frame_",
-                    0,
-                    1,
-                    "png",
-                    19,
-                    fps: 33,
-                    onFinishPlaying: _onFinishPlaying,
-                  ),
-          ),
+              child: ImageSequenceAnimator(
+            board[i][j] == 0 ? "assets/flip_0" : 'assets/flip_1',
+            "frame_",
+            0,
+            1,
+            "png",
+            19,
+            fps: 50,
+            waitUntilCacheIsComplete: true,
+            onFinishPlaying: _onFinishPlaying,
+          )),
         ),
       ),
     );
