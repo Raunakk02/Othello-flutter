@@ -19,23 +19,22 @@ class _PieceState extends State<Piece> {
       print(value);
     });
   }
-  
+
   @override
   Widget build(BuildContext context) {
     Widget child = Container();
     if (value == 0)
       child = FittedBox(
         fit: BoxFit.cover,
-        child:
-        Image.asset("assets/flip_0/frame_0.png"),
+        child: Image.asset("assets/flip_0/frame_0.png"),
       );
     else if (value == 2)
       child = FittedBox(
         fit: BoxFit.cover,
-        child:
-        Image.asset("assets/flip_0/frame_18.png"),
+        child: Image.asset("assets/flip_0/frame_18.png"),
       );
-    else child = piece();
+    else
+      child = piece();
     return Container(
       padding: const EdgeInsets.all(1),
       width: widget.cellWidth,
@@ -61,24 +60,24 @@ class _PieceState extends State<Piece> {
     };
     return value == 1
         ? ImageSequenceAnimator(
-      "assets/flip_0",
-      "frame_",
-      0,
-      1,
-      "png",
-      19,
-      fps: 33,
-      onFinishPlaying: _onFinishPlaying,
-    )
+            "assets/flip_0",
+            "frame_",
+            0,
+            1,
+            "png",
+            19,
+            fps: 33,
+            onFinishPlaying: _onFinishPlaying,
+          )
         : ImageSequenceAnimator(
-      "assets/flip_1",
-      "frame_",
-      0,
-      1,
-      "png",
-      19,
-      fps: 33,
-      onFinishPlaying: _onFinishPlaying,
-    );
+            "assets/flip_1",
+            "frame_",
+            0,
+            1,
+            "png",
+            19,
+            fps: 33,
+            onFinishPlaying: _onFinishPlaying,
+          );
   }
 }
