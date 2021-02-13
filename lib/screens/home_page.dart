@@ -20,7 +20,7 @@ class _HomePageState extends State<HomePage>
   List<Widget> mainStack;
   List<List<int>> board = [];
   List<List<bool>> flipping = [], possibleMove = [];
-  List<List<Function>> cellStateFns = [], flipStateFns = [];
+  List<List<Function({bool operate})>> cellStateFns = [], flipStateFns = [];
   bool whiteTurn = true;
 
   @override
@@ -39,9 +39,11 @@ class _HomePageState extends State<HomePage>
       flipping[i] = [];
       flipping[i].length = boardLength;
       possibleMove[i] = [];
-      possibleMove[i].length = boardLength;
       board.add([]);
-      for (int j = 0; j < boardLength; j++) board[i].add(-1);
+      for (int j = 0; j < boardLength; j++) {
+        board[i].add(-1);
+        possibleMove[i].add(false);
+      }
     }
 
     initBoard();
@@ -51,6 +53,17 @@ class _HomePageState extends State<HomePage>
   Widget piece(int i, int j) => StatefulBuilder(
         builder: (context, setCellState) {
           Widget child = Container();
+          if (possibleMove[i][j])
+            child = Center(
+              child: Container(
+                width: cellWidth / 2,
+                height: cellWidth / 2,
+                decoration: BoxDecoration(
+                  color: whiteTurn ? Colors.white54 : Colors.black54,
+                  borderRadius: BorderRadius.circular(50),
+                ),
+              ),
+            );
           if (board[i][j] == 0)
             child = FittedBox(
               fit: BoxFit.cover,
@@ -61,9 +74,9 @@ class _HomePageState extends State<HomePage>
               fit: BoxFit.cover,
               child: Image.asset("assets/flip_0/frame_18.png"),
             );
-          cellStateFns[i][j] = () {
+          cellStateFns[i][j] = ({bool operate = true}) {
             setCellState(() {
-              board[i][j] = (board[i][j] + 1) % 4;
+              if (operate) board[i][j] = (board[i][j] + 1) % 4;
             });
           };
           return Container(
@@ -73,11 +86,12 @@ class _HomePageState extends State<HomePage>
             color: Colors.black,
             child: InkWell(
               onTap: () async {
-                if (board[i][j] == -1) {
+                if (board[i][j] == -1 && possibleMove[i][j]) {
                   if (!whiteTurn) board[i][j] = 1;
                   whiteTurn = !whiteTurn;
                   cellStateFns[i][j]();
-                  _flipPieces(_getPiecesToFlip(i, j, board[i][j]));
+                  await _flipPieces(_getPiecesToFlip(i, j, board[i][j]));
+                  _markPossibleMoves();
                   return;
                 }
               },
@@ -95,6 +109,8 @@ class _HomePageState extends State<HomePage>
     board[4][4] = 0;
     board[3][4] = 2;
     board[4][3] = 2;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => _markPossibleMoves());
   }
 
   @override
@@ -103,9 +119,9 @@ class _HomePageState extends State<HomePage>
       Column(
         children: List.generate(
             boardHeight,
-                (i) => Row(
-              children: List.generate(boardLength, (j) => piece(i, j)),
-            )),
+            (i) => Row(
+                  children: List.generate(boardLength, (j) => piece(i, j)),
+                )),
       ),
     ];
 
@@ -146,8 +162,8 @@ class _HomePageState extends State<HomePage>
       top: cellWidth * i - (((cellWidth * (90 / 74)) - cellWidth) / 2),
       child: IgnorePointer(
         child: StatefulBuilder(builder: (context, state) {
-          flipStateFns[i][j] = () {
-            flipping[i][j] = !flipping[i][j];
+          flipStateFns[i][j] = ({operate = true}) {
+            if (operate) flipping[i][j] = !flipping[i][j];
             state(() {});
           };
           return flipping[i][j] ? _flipAnimation(i, j) : Container();
@@ -185,11 +201,30 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  void _flipPieces(List<List<List<int>>> piecesToFlip) async {
+  void _markPossibleMoves() {
+    int value = whiteTurn ? 0 : 2;
+    for (int i = 0; i < boardHeight; i++)
+      for (int j = 0; j < boardLength; j++) {
+        if (board[i][j] != -1) continue;
+        bool setThisCellState = false;
+        if (possibleMove[i][j]) {
+          possibleMove[i][j] = false;
+          setThisCellState = true;
+        }
+        if (_getPiecesToFlip(i, j, value).length > 0) {
+          possibleMove[i][j] = true;
+          setThisCellState = true;
+        }
+        if (setThisCellState) cellStateFns[i][j](operate: false);
+      }
+  }
+
+  Future<void> _flipPieces(List<List<List<int>>> piecesToFlip) async {
     for (var levelPieces in piecesToFlip) {
       for (var pair in levelPieces) _flip(pair.first, pair.last);
       await Future.delayed(Duration(milliseconds: 100));
     }
+    await Future.delayed(Duration(milliseconds: 400));
   }
 
   List<List<List<int>>> _getPiecesToFlip(int mainI, int mainJ, int value) {
@@ -204,11 +239,16 @@ class _HomePageState extends State<HomePage>
           currentI += step * i;
           currentJ += step * j;
           if (k == -1) break;
+          //prevent if any infinite loop happening, even though it should not happen
+          if (k > 8 || k < -8) {
+            print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+            break;
+          }
           if (currentI < 0 ||
               currentI >= boardHeight ||
               currentJ < 0 ||
               currentJ >= boardLength ||
-              board[currentI][currentJ] == -1) {
+              board[currentI][currentJ] % 2 == 1) {
             step = -1;
             continue;
           }
