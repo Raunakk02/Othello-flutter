@@ -44,7 +44,7 @@ class PieceState extends State<Piece> {
   @override
   Widget build(BuildContext context) {
     Widget child = Container();
-    if (possibleMove)
+    if (possibleMove && value == -1)
       child = Center(
         child: Container(
           width: widget.cellWidth / 2,
