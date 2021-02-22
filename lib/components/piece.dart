@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 class Piece extends StatefulWidget {
-  Piece(this.cellWidth, {this.initState, this.initValue = -1, this.flip});
+  Piece(this.cellWidth, {this.onCreation, this.initValue = -1, this.flip});
 
-  final Function(PieceState state) initState;
-  final Function flip;
+  final Function(PieceState state) onCreation;
+  final Function(PieceState state) flip;
   final double cellWidth;
   final int initValue;
 
@@ -14,24 +14,28 @@ class Piece extends StatefulWidget {
 
 class PieceState extends State<Piece> {
   PieceState(int value) {
-    if (value == 1) this._value = 2;
-    else this._value = value;
+    if (value == 1)
+      this._value = 2;
+    else
+      this._value = value;
   }
 
   int _value;
   bool possibleMove = false;
+
   int get boardValue {
     if (_value == 0 || _value == 3) return 0;
     if (_value == 1 || _value == 2) return 1;
     return -1;
   }
+
   int get value => _value;
 
   static bool whiteTurn = false;
 
   @override
   void initState() {
-    widget.initState(this);
+    (widget.onCreation ?? (_) {})(this);
     super.initState();
   }
 
@@ -76,7 +80,7 @@ class PieceState extends State<Piece> {
             if (!whiteTurn) _value = 1;
             whiteTurn = !whiteTurn;
             stateFn();
-            (widget.flip ?? () {})();
+            (widget.flip ?? () {})(this);
           }
         },
         child: Container(
