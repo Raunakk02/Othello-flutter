@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:image_sequence_animator/image_sequence_animator.dart';
+import 'package:othello/components/flip_piece.dart';
 import 'package:othello/components/piece.dart';
 
 class HomePage extends StatefulWidget {
@@ -20,33 +20,33 @@ class _HomePageState extends State<HomePage>
   double cellWidth;
   List<Widget> mainStack;
   List<List<int>> board = [];
-  List<List<bool>> flipping = [];
-  List<List<Function({bool operate})>> flipStateFns = [];
+  List<List<FlipPieceState>> flipPieceStates = [];
   List<List<PieceState>> pieceStates = [];
 
   @override
   void initState() {
+    _initValues();
+    _initBoard();
+    _initStack();
+    super.initState();
+  }
+
+  void _initValues() {
     boardWidth = widget.screenWidth - 50;
     cellWidth = boardWidth / boardLength;
-    flipStateFns.length = boardHeight;
-    flipping.length = boardHeight;
+    flipPieceStates.length = boardHeight;
     pieceStates.length = boardHeight;
     for (int i = 0; i < boardHeight; i++) {
-      flipStateFns[i] = [];
-      flipStateFns[i].length = boardLength;
-      flipping[i] = [];
-      flipping[i].length = boardLength;
+      flipPieceStates[i] = [];
+      flipPieceStates[i].length = boardLength;
       pieceStates[i] = [];
       pieceStates[i].length = boardLength;
       board.add([]);
       for (int j = 0; j < boardLength; j++) board[i].add(-1);
     }
-
-    initBoard();
-    super.initState();
   }
 
-  void initBoard() {
+  void _initBoard() {
     board[3][3] = 0;
     board[4][4] = 0;
     board[3][4] = 1;
@@ -55,107 +55,45 @@ class _HomePageState extends State<HomePage>
     WidgetsBinding.instance.addPostFrameCallback((_) => _markPossibleMoves());
   }
 
-  @override
-  Widget build(BuildContext context) {
+  void _initStack() {
     mainStack = [
       Column(
         children: List.generate(
             boardHeight,
-            (i) => Row(
-                  children: List.generate(
-                      boardLength,
+                (i) => Row(
+              children: List.generate(
+                  boardLength,
                       (j) => Piece(
-                            cellWidth,
-                            initValue: board[i][j],
-                            initState: (state) => pieceStates[i][j] = state,
-                            flip: () async {
-                              board[i][j] = pieceStates[i][j].boardValue;
-                              var piecesToFlip =
-                                  _getPiecesToFlip(i, j, board[i][j]);
-                              _flipPieces(piecesToFlip);
-                              _markPossibleMoves();
-                              await _startFlipAnimation(piecesToFlip);
-                            },
-                          )),
-                )),
+                    cellWidth,
+                    initValue: board[i][j],
+                    onCreation: (state) => pieceStates[i][j] = state,
+                    flip: (state) async {
+                      board[i][j] = state.boardValue;
+                      var piecesToFlip =
+                      _getPiecesToFlip(i, j, board[i][j]);
+                      _flipPieces(piecesToFlip);
+                      _markPossibleMoves();
+                      await _startFlipAnimation(piecesToFlip);
+                    },
+                  )),
+            )),
       ),
     ];
 
     for (int i = 0; i < boardHeight; i++)
-      for (int j = 0; j < boardLength; j++) mainStack.add(_flipPiece(i, j));
-
-    return Scaffold(
-      appBar: AppBar(title: Text("Othello Game")),
-      body: Padding(
-        padding: const EdgeInsets.all(15),
-        child: Center(
-          child: Container(
-            color: Colors.brown,
-            padding: const EdgeInsets.all(10),
-            child: Container(
-              width: widget.screenWidth - 50,
-              height: widget.screenWidth - 50,
-              color: Colors.green[600],
-              child: Stack(
-                children: mainStack,
-              ),
-            ),
+      for (int j = 0; j < boardLength; j++)
+        mainStack.add(
+          FlipPiece(
+            cellWidth,
+            i,
+            j,
+            onCreation: (state) => flipPieceStates[i][j] = state,
+            getPieceStateFn: () => getPieceState(i, j),
           ),
-        ),
-      ),
-    );
+        );
   }
 
-  void _flip(int i, int j) {
-    flipStateFns[i][j]();
-    pieceStates[i][j].stateFn();
-  }
-
-  Widget _flipPiece(int i, int j) {
-    flipping[i][j] = false;
-    return Positioned(
-      left: cellWidth * j,
-      top: cellWidth * i - (((cellWidth * (90 / 74)) - cellWidth) / 2),
-      child: IgnorePointer(
-        child: StatefulBuilder(builder: (context, state) {
-          flipStateFns[i][j] = ({operate = true}) {
-            if (operate) flipping[i][j] = !flipping[i][j];
-            state(() {});
-          };
-          return flipping[i][j] ? _flipAnimation(i, j) : Container();
-        }),
-      ),
-    );
-  }
-
-  Widget _flipAnimation(int i, int j) {
-    final _onFinishPlaying = (state) {
-      if (pieceStates[i][j].value % 2 == 0) return;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        flipStateFns[i][j]();
-        pieceStates[i][j].stateFn();
-      });
-    };
-    return Container(
-      width: cellWidth,
-      height: cellWidth * (90 / 74),
-      child: FittedBox(
-        child: InkWell(
-          child: ImageSequenceAnimator(
-            board[i][j] == 1 ? "assets/flip_0" : 'assets/flip_1',
-            "frame_",
-            0,
-            1,
-            "png",
-            19,
-            fps: 50,
-            waitUntilCacheIsComplete: true,
-            onFinishPlaying: _onFinishPlaying,
-          ),
-        ),
-      ),
-    );
-  }
+  PieceState getPieceState(int i, int j) => pieceStates[i][j];
 
   void _markPossibleMoves() {
     int value = PieceState.whiteTurn ? 0 : 1;
@@ -185,7 +123,8 @@ class _HomePageState extends State<HomePage>
 
   Future<void> _startFlipAnimation(List<List<List<int>>> piecesToFlip) async {
     for (var levelPieces in piecesToFlip) {
-      for (var pair in levelPieces) _flip(pair.first, pair.last);
+      for (var pair in levelPieces)
+        flipPieceStates[pair.first][pair.last].flip();
 
       await Future.delayed(Duration(milliseconds: 100));
     }
@@ -230,5 +169,29 @@ class _HomePageState extends State<HomePage>
       }
     }
     return piecesToFlip;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text("Othello Game")),
+      body: Padding(
+        padding: const EdgeInsets.all(15),
+        child: Center(
+          child: Container(
+            color: Colors.brown,
+            padding: const EdgeInsets.all(10),
+            child: Container(
+              width: widget.screenWidth - 50,
+              height: widget.screenWidth - 50,
+              color: Colors.green[600],
+              child: Stack(
+                children: mainStack,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
