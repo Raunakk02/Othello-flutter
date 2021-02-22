@@ -60,23 +60,26 @@ class _HomePageState extends State<HomePage>
       Column(
         children: List.generate(
             boardHeight,
-                (i) => Row(
-              children: List.generate(
-                  boardLength,
+            (i) => Row(
+                  children: List.generate(
+                      boardLength,
                       (j) => Piece(
-                    cellWidth,
-                    initValue: board[i][j],
-                    onCreation: (state) => pieceStates[i][j] = state,
-                    flip: (state) async {
-                      board[i][j] = state.boardValue;
-                      var piecesToFlip =
-                      _getPiecesToFlip(i, j, board[i][j]);
-                      _flipPieces(piecesToFlip);
-                      _markPossibleMoves();
-                      await _startFlipAnimation(piecesToFlip);
-                    },
-                  )),
-            )),
+                            cellWidth,
+                            initValue: board[i][j],
+                            onCreation: (state) => pieceStates[i][j] = state,
+                            flip: (state) async {
+                              board[i][j] = state.boardValue;
+                              var piecesToFlip =
+                                  _getPiecesToFlip(i, j, board[i][j]);
+                              _flipPieces(piecesToFlip);
+                              if (!_markPossibleMoves()) {
+                                PieceState.whiteTurn = !PieceState.whiteTurn;
+                                _markPossibleMoves();
+                              }
+                              await _startFlipAnimation(piecesToFlip);
+                            },
+                          )),
+                )),
       ),
     ];
 
@@ -95,8 +98,9 @@ class _HomePageState extends State<HomePage>
 
   PieceState getPieceState(int i, int j) => pieceStates[i][j];
 
-  void _markPossibleMoves() {
+  bool _markPossibleMoves() {
     int value = PieceState.whiteTurn ? 0 : 1;
+    bool havePossibleMove = false;
     for (int i = 0; i < boardHeight; i++)
       for (int j = 0; j < boardLength; j++) {
         if (board[i][j] != -1) continue;
@@ -108,9 +112,11 @@ class _HomePageState extends State<HomePage>
         if (_getPiecesToFlip(i, j, value).length > 0) {
           pieceStates[i][j].possibleMove = true;
           setThisCellState = true;
+          havePossibleMove = true;
         }
         if (setThisCellState) pieceStates[i][j].stateFn(operate: false);
       }
+    return havePossibleMove;
   }
 
   void _flipPieces(List<List<List<int>>> piecesToFlip) {
