@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -18,6 +19,7 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     _initStack();
+    print('Firesbase Auth User Test : ${FirebaseAuth.instance.currentUser}');
     super.initState();
   }
 

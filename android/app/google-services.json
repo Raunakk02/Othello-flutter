@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "515886391198",
+    "project_id": "othello-281ce",
+    "storage_bucket": "othello-281ce.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:515886391198:android:a63a372056c4453d9f408f",
+        "android_client_info": {
+          "package_name": "com.vishnuworld.othello"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "515886391198-8g4gths17v8nd22k9m0oerv355ih4tbo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBUivbOJknTDpWW-fOLMoBi0p5JLORgumE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "515886391198-8g4gths17v8nd22k9m0oerv355ih4tbo.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
