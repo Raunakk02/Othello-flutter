@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -29,12 +29,7 @@ class _HomePageState extends State<HomePage>
     _initValues();
     _initBoard();
     _initStack();
-
-    // FirebaseFirestore.instance.collection('sample').snapshots().listen(
-    //   (data) {
-    //     print(data.docs[0]['title']);
-    //   },
-    // );
+    print('Firesbase Auth User Test : ${FirebaseAuth.instance.currentUser}');
     super.initState();
   }
 
