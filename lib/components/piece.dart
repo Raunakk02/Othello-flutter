@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 class Piece extends StatefulWidget {
-  Piece(this.cellWidth, {this.onCreation, this.initValue = -1, this.flip});
+  Piece(this.cellWidth, {this.onCreation, this.initValue = -1, this.onTap});
 
   final Function(PieceState state) onCreation;
-  final Function(PieceState state) flip;
+  final Function(PieceState state) onTap;
   final double cellWidth;
   final int initValue;
 
@@ -13,15 +13,13 @@ class Piece extends StatefulWidget {
 }
 
 class PieceState extends State<Piece> {
-  PieceState(int value) {
-    if (value == 1)
-      this._value = 2;
-    else
-      this._value = value;
-  }
+  PieceState(int value) : this._value = _valueFromBoardValue(value);
 
   int _value;
   bool possibleMove = false;
+
+  static int _valueFromBoardValue(int boardValue) =>
+      boardValue == 1 ? 2 : boardValue;
 
   int get boardValue {
     if (_value == 0 || _value == 3) return 0;
@@ -42,6 +40,12 @@ class PieceState extends State<Piece> {
   void stateFn({bool operate = true}) {
     setState(() {
       if (operate) _value = (_value + 1) % 4;
+    });
+  }
+
+  void set(int boardValue) {
+    setState(() {
+      _value = _valueFromBoardValue(boardValue);
     });
   }
 
@@ -80,7 +84,7 @@ class PieceState extends State<Piece> {
             if (!whiteTurn) _value = 1;
             whiteTurn = !whiteTurn;
             stateFn();
-            (widget.flip ?? () {})(this);
+            (widget.onTap ?? () {})(this);
           }
         },
         child: Container(
