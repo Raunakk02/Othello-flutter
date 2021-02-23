@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:othello/utils/globals.dart';
 
 import 'screens/home_page.dart';
 
@@ -27,7 +28,7 @@ class MyApp extends StatelessWidget {
 class MainPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    return HomePage(screenWidth);
+    Globals.mediaQueryData = MediaQuery.of(context);
+    return HomePage();
   }
 }
