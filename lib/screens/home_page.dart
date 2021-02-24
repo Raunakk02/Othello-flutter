@@ -18,7 +18,7 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     _initStack();
-    print('Firesbase Auth User Test : ${FirebaseAuth.instance.currentUser}');
+    print('Firebase Auth User Test : ${FirebaseAuth.instance.currentUser}');
     super.initState();
   }
 
@@ -35,7 +35,7 @@ class _HomePageState extends State<HomePage>
                             initValue: _gameInfo.board[i][j],
                             onCreation: (state) =>
                                 _gameInfo.pieceStates[i][j] = state,
-                            onTap: _gameInfo.onTapOnPiece(i, j),
+                            onTap: _gameInfo.onTapOnPiece(i, j, context),
                           )),
                 )),
       ),
@@ -57,7 +57,19 @@ class _HomePageState extends State<HomePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Othello Game")),
+      appBar: AppBar(
+        title: Text("Othello Game"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.replay),
+            onPressed: () {
+              Navigator.pushReplacement(context, MaterialPageRoute(
+                builder: (context) => HomePage(),
+              ));
+            },
+          )
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(15),
         child: Center(

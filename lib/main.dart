@@ -21,7 +21,13 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Othello Game',
-      theme: ThemeData.dark().copyWith(),
+      theme: ThemeData.dark().copyWith(
+        primaryColor: Colors.brown,
+        floatingActionButtonTheme:
+            ThemeData.dark().floatingActionButtonTheme.copyWith(
+                  backgroundColor: Colors.brown,
+                ),
+      ),
       home: MainPage(),
     );
   }
