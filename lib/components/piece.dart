@@ -74,7 +74,7 @@ class PieceState extends State<Piece> {
         child: Image.asset("assets/flip_0/frame_18.png"),
       );
     return Container(
-      padding: EdgeInsets.all(1),
+      padding: const EdgeInsets.all(0.5),
       width: widget.cellWidth,
       height: widget.cellWidth,
       color: Colors.black,

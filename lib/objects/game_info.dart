@@ -1,6 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:othello/components/common_alert_dialog.dart';
 import 'package:othello/components/flip_piece.dart';
 import 'package:othello/components/piece.dart';
 import 'package:othello/utils/globals.dart';
@@ -8,17 +10,18 @@ import 'package:othello/utils/globals.dart';
 extension on List<List<int>> {
   List<List<int>> get clone {
     List<List<int>> res = [];
-    for (int i = 0; i < this.length; i++){
+    for (int i = 0; i < this.length; i++) {
       res.add([]);
-      for (int j = 0; j < this[i].length; j++)
-        res[i].add(this[i][j]);
+      for (int j = 0; j < this[i].length; j++) res[i].add(this[i][j]);
     }
     return res;
   }
 }
 
 class GameInfo {
-  GameInfo(this.boardHeight, this.boardLength) {
+  GameInfo(int boardHeight, int boardLength)
+      : this.boardHeight = max(2, boardHeight),
+        this.boardLength = max(2, boardLength) {
     _initValues();
     _initBoard();
   }
@@ -48,10 +51,14 @@ class GameInfo {
   }
 
   void _initBoard() {
-    board[3][3] = 0;
-    board[4][4] = 0;
-    board[3][4] = 1;
-    board[4][3] = 1;
+    int lMidFirst = boardLength ~/ 2 - 1,
+        lMidSecond = boardLength ~/ 2,
+        hMidFirst = boardHeight ~/ 2 - 1,
+        hMidSecond = boardHeight ~/ 2;
+    board[hMidFirst][lMidFirst] = 0;
+    board[hMidSecond][lMidSecond] = 0;
+    board[hMidFirst][lMidSecond] = 1;
+    board[hMidSecond][lMidFirst] = 1;
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _markPossibleMoves());
   }
@@ -68,17 +75,60 @@ class GameInfo {
     WidgetsBinding.instance.addPostFrameCallback((_) => _markPossibleMoves());
   }
 
-  Function(PieceState state) onTapOnPiece(int i, int j) => (state) async {
+  Function(PieceState state) onTapOnPiece(int i, int j, BuildContext context) =>
+      (state) async {
         _board.add(board.clone);
         board[i][j] = state.boardValue;
         var piecesToFlip = _getPiecesToFlip(i, j, board[i][j]);
         _flipPieces(piecesToFlip);
-        if (!_markPossibleMoves()) {
-          PieceState.whiteTurn = !PieceState.whiteTurn;
-          _markPossibleMoves();
-        }
+        _markPossibleMovesOrEndGame(context);
         await _startFlipAnimation(piecesToFlip);
       };
+
+  void _markPossibleMovesOrEndGame(BuildContext context) {
+    if (!_markPossibleMoves()) {
+      PieceState.whiteTurn = !PieceState.whiteTurn;
+      if (!_markPossibleMoves()) _endGame(context);
+    }
+  }
+
+  void _endGame(BuildContext context) {
+    final _totalPieces = getTotalPieces();
+    final _status = _getStatus(_totalPieces);
+    showDialog(
+        context: context,
+        builder: (context) {
+          String title = "TIE";
+          if (_status == 0)
+            title = "WHITE WINS";
+          else if (_status == 1) title = "BLACK WINS";
+          return CommonAlertDialog(title);
+        });
+  }
+
+  List<int> getTotalPieces() {
+    List<int> res = [0, 0, 0];
+    for (int i = 0; i < board.length; i++) {
+      for (int j = 0; j < board[i].length; j++) {
+        if (board[i][j] == 0)
+          res[0]++;
+        else if (board[i][j] == 1)
+          res[1]++;
+        else
+          res[2]++;
+      }
+    }
+    return res;
+  }
+
+  ///-1 for tie
+  ///0 for White win
+  ///1 for black win
+  int _getStatus(List<int> totalPieces) {
+    assert(totalPieces.length == 3);
+    if (totalPieces[0] == totalPieces[1]) return -1;
+    return totalPieces[0] > totalPieces[1] ? 0 : 1;
+  }
 
   void _flipPieces(List<List<List<int>>> piecesToFlip) {
     for (var levelPieces in piecesToFlip)
@@ -88,8 +138,8 @@ class GameInfo {
       }
   }
 
-  bool _markPossibleMoves() {
-    int value = PieceState.whiteTurn ? 0 : 1;
+  bool _markPossibleMoves({bool whiteTurn}) {
+    int value = whiteTurn ?? PieceState.whiteTurn ? 0 : 1;
     bool havePossibleMove = false;
     for (int i = 0; i < boardHeight; i++)
       for (int j = 0; j < boardLength; j++) {
