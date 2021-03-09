@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:image_sequence_animator/image_sequence_animator.dart';
+import 'image_sequence_animator.dart';
 import 'package:othello/components/piece.dart';
 
 class FlipPiece extends StatefulWidget {
   FlipPiece(this.cellWidth, this.i, this.j,
-      {this.onCreation, @required this.getPieceStateFn});
+      {this.onCreation, required this.getPieceStateFn});
 
   final double cellWidth;
   final int i;
   final int j;
-  final Function(FlipPieceState state) onCreation;
+  final Function(FlipPieceState state)? onCreation;
   final PieceState Function() getPieceStateFn;
 
   @override
@@ -45,7 +45,7 @@ class FlipPieceState extends State<FlipPiece> {
   Widget _flipAnimation() {
     final _onFinishPlaying = (state) {
       if (_pieceState.value % 2 == 0) return;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance!.addPostFrameCallback((_) {
         _flipStateFn();
         _pieceState.stateFn();
       });

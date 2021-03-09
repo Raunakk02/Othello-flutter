@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 class CommonAlertDialog extends AlertDialog {
   final String titleString;
-  final Widget content;
-  final Icon icon;
-  final Function onPressed;
+  final Widget? content;
+  final Icon? icon;
+  final Function? onPressed;
   final bool error;
 
   CommonAlertDialog(this.titleString,
@@ -38,10 +38,11 @@ class CommonAlertDialog extends AlertDialog {
             child: Padding(
               padding: EdgeInsets.only(left: 15),
               child: FittedBox(
-                child: icon ?? error
-                    ? Icon(Icons.block, color: Colors.red)
-                    : Icon(Icons.check_circle_outline,
-                        color: Colors.lightGreen),
+                child: icon ??
+                    (error
+                        ? Icon(Icons.block, color: Colors.red)
+                        : Icon(Icons.check_circle_outline,
+                            color: Colors.lightGreen)),
               ),
             ),
           )
@@ -49,14 +50,14 @@ class CommonAlertDialog extends AlertDialog {
       ),
       actions: <Widget>[
         Center(
-          child: FlatButton(
+          child: TextButton(
             child: Text(
               "OK",
               style: TextStyle(
                 fontSize: screenWidth * 0.04,
               ),
             ),
-            onPressed: onPressed ??
+            onPressed: onPressed as void Function()? ??
                 () {
                   Navigator.of(context).pop();
                 },
