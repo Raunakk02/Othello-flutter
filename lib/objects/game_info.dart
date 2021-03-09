@@ -32,6 +32,7 @@ class GameInfo {
   List<List<List<int>>> _board = [[]];
   List<List<FlipPieceState>> flipPieceStates = [];
   List<List<PieceState>> pieceStates = [];
+  bool _flipping = false;
 
   List<List<int>> get board => _board.last;
 
@@ -68,11 +69,11 @@ class GameInfo {
     _board.removeLast();
 
     PieceState.whiteTurn = !PieceState.whiteTurn;
+    if (!_flipping) _syncEachPiece();
 
-    for (int i = 0; i < boardHeight; i++)
-      for (int j = 0; j < boardLength; j++) pieceStates[i][j].set(board[i][j]);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) => _markPossibleMoves());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _markPossibleMovesOrEndGame();
+    });
   }
 
   Function(PieceState state) onTapOnPiece(int i, int j, BuildContext context) =>
@@ -81,14 +82,15 @@ class GameInfo {
         board[i][j] = state.boardValue;
         var piecesToFlip = _getPiecesToFlip(i, j, board[i][j]);
         _flipPieces(piecesToFlip);
-        _markPossibleMovesOrEndGame(context);
+        _markPossibleMovesOrEndGame(context: context);
         await _startFlipAnimation(piecesToFlip);
       };
 
-  void _markPossibleMovesOrEndGame(BuildContext context) {
+  ///If there is a possibility of End Game do not left context null.
+  void _markPossibleMovesOrEndGame({BuildContext context}) {
     if (!_markPossibleMoves()) {
       PieceState.whiteTurn = !PieceState.whiteTurn;
-      if (!_markPossibleMoves()) _endGame(context);
+      if (!_markPossibleMoves() && context != null) _endGame(context);
     }
   }
 
@@ -160,6 +162,8 @@ class GameInfo {
   }
 
   Future<void> _startFlipAnimation(List<List<List<int>>> piecesToFlip) async {
+    if (_flipping) return;
+    _flipping = true;
     for (var levelPieces in piecesToFlip) {
       for (var pair in levelPieces)
         flipPieceStates[pair.first][pair.last].flip();
@@ -167,6 +171,13 @@ class GameInfo {
       await Future.delayed(Duration(milliseconds: 100));
     }
     await Future.delayed(Duration(milliseconds: 400));
+    _syncEachPiece();
+    _flipping = false;
+  }
+
+  void _syncEachPiece() {
+    for (int i = 0; i < boardHeight; i++)
+      for (int j = 0; j < boardLength; j++) pieceStates[i][j].set(board[i][j]);
   }
 
   List<List<List<int>>> _getPiecesToFlip(int mainI, int mainJ, int value) {
