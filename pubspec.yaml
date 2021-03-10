@@ -38,6 +38,9 @@ dependencies:
   #google sign-in
   google_sign_in: ^5.0.0
 
+  #OTP input
+  pinput: ^1.1.0
+
   #state management
   provider: ^5.0.0
 
