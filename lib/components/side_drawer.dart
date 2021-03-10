@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 class SideDrawer extends StatelessWidget {
   final photoURL = FirebaseAuth.instance.currentUser?.photoURL;
+  final userName = FirebaseAuth.instance.currentUser?.displayName;
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -21,9 +22,11 @@ class SideDrawer extends StatelessWidget {
               leading: CircleAvatar(
                 radius: 30,
                 child: ClipRRect(
-                    borderRadius: BorderRadius.circular(30),
-                    child: Image.network(photoURL!)),
+                  borderRadius: BorderRadius.circular(30),
+                  child: Image.network(photoURL!),
+                ),
               ),
+              title: Text(userName!),
             ),
             ListTile(
               leading: FaIcon(FontAwesomeIcons.signOutAlt),
