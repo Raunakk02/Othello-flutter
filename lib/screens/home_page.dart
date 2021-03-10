@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:othello/components/flip_piece.dart';
 import 'package:othello/components/piece.dart';
+import 'package:othello/components/side_drawer.dart';
 import 'package:othello/objects/game_info.dart';
 
 class HomePage extends StatefulWidget {
@@ -73,6 +74,7 @@ class _HomePageState extends State<HomePage>
           )
         ],
       ),
+      // drawer: SideDrawer(),
       body: Padding(
         padding: const EdgeInsets.all(15),
         child: Center(
