@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:othello/utils/globals.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:othello/utils/routes.dart';
 
 import 'screens/home_page.dart';
 
@@ -28,7 +29,8 @@ class MyApp extends StatelessWidget {
                   backgroundColor: Colors.brown,
                 ),
       ),
-      home: MainPage(),
+      // home: MainPage(),
+      routes: appRoutes,
     );
   }
 }

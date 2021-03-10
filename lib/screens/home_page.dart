@@ -6,6 +6,7 @@ import 'package:othello/components/piece.dart';
 import 'package:othello/objects/game_info.dart';
 
 class HomePage extends StatefulWidget {
+  static const routeName = '/home-page';
   @override
   _HomePageState createState() => _HomePageState();
 }
@@ -63,9 +64,11 @@ class _HomePageState extends State<HomePage>
           IconButton(
             icon: Icon(Icons.replay),
             onPressed: () {
-              Navigator.pushReplacement(context, MaterialPageRoute(
-                builder: (context) => HomePage(),
-              ));
+              Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => HomePage(),
+                  ));
             },
           )
         ],
