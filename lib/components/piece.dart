@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 class Piece extends StatefulWidget {
   Piece(this.cellWidth, {this.onCreation, this.initValue = -1, this.onTap});
 
-  final Function(PieceState state) onCreation;
-  final Function(PieceState state) onTap;
+  final Function(PieceState state)? onCreation;
+  final Function(PieceState state)? onTap;
   final double cellWidth;
   final int initValue;
 
