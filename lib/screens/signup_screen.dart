@@ -26,14 +26,14 @@ class SignUpScreen extends StatelessWidget {
             ),
           ),
           Spacer(),
+          Text(
+            'Login to continue',
+            style: TextStyle(fontSize: 20),
+          ),
           SizedBox(
             height: 12,
           ),
           GoogleSignupButton(),
-          Text(
-            'Login to continue',
-            style: TextStyle(fontSize: 16),
-          ),
           Spacer(),
         ],
       ),
