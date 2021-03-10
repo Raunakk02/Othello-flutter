@@ -13,7 +13,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
   final _gameInfo = GameInfo(8, 8);
-  List<Widget> mainStack;
+  late List<Widget> mainStack;
 
   @override
   void initState() {
@@ -49,7 +49,7 @@ class _HomePageState extends State<HomePage>
             i,
             j,
             onCreation: (state) => _gameInfo.flipPieceStates[i][j] = state,
-            getPieceStateFn: () => _gameInfo.pieceStates[i][j],
+            getPieceStateFn: () => _gameInfo.pieceStates[i][j]!,
           ),
         );
   }
