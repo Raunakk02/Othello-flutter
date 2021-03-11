@@ -4,6 +4,7 @@ import 'package:flutter/rendering.dart';
 import 'package:othello/components/flip_piece.dart';
 import 'package:othello/components/piece.dart';
 import 'package:othello/objects/game_info.dart';
+import 'package:othello/objects/room_data.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -12,7 +13,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
-  final _gameInfo = GameInfo(8, 8);
+  final _gameInfo = GameInfo(RoomData.offlinePvPNewGame(8, 8));
   late List<Widget> mainStack;
 
   @override
@@ -63,9 +64,11 @@ class _HomePageState extends State<HomePage>
           IconButton(
             icon: Icon(Icons.replay),
             onPressed: () {
-              Navigator.pushReplacement(context, MaterialPageRoute(
-                builder: (context) => HomePage(),
-              ));
+              Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => HomePage(),
+                  ));
             },
           )
         ],
