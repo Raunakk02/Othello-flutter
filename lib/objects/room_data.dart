@@ -79,6 +79,8 @@ class RoomData {
 
   UnmodifiableListView<ChatMessage> get chats => UnmodifiableListView(_chats);
 
+  DateTime get timestamp => _timestamp;
+
   UnmodifiableListView<UnmodifiableListView<int>> get currentBoard {
     List<UnmodifiableListView<int>> res = [];
     for (int i = 0; i < height; i++)

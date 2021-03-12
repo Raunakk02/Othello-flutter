@@ -25,6 +25,8 @@ class GameInfo {
 
   int get boardLength => _roomData.length;
 
+  RoomData get roomData => _roomData;
+
   UnmodifiableListView<UnmodifiableListView<int>> get board =>
       _roomData.currentBoard;
 
