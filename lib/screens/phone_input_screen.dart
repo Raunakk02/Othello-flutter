@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:othello/screens/otp_screen.dart';
 
 class PhoneInputScreen extends StatefulWidget {
   static const routeName = '/phone-input-screen';
@@ -49,7 +50,14 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
             ),
           ),
           TextButton(
-            onPressed: () {},
+            onPressed: () {
+              if (phoneNumberController.text != '') {
+                Navigator.of(context).pushNamed(
+                  OtpScreen.routeName,
+                  arguments: phoneNumberController.text.trim(),
+                );
+              }
+            },
             child: Text('Submit'),
             style: TextButton.styleFrom(
               primary: Colors.green,

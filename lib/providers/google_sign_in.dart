@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 class GoogleSignInProvider with ChangeNotifier {
   final googleSignIn = GoogleSignIn();
+  final auth = FirebaseAuth.instance;
   late bool _isSigningIn;
 
   GoogleSignInProvider() {
@@ -38,8 +39,38 @@ class GoogleSignInProvider with ChangeNotifier {
     }
   }
 
+  Future verifyPhone({
+    required String phone,
+    required void Function(String, int?) codeSentCallback,
+    required void Function(String) codeAutoRetrievalTimeoutCallback,
+  }) async {
+    _isSigningIn = true;
+
+    await auth.verifyPhoneNumber(
+      phoneNumber: '+$phone',
+      verificationCompleted: (creds) async {
+        print('Veriiii completed : $phone');
+        var userCreds = await auth.signInWithCredential(creds);
+        if (userCreds.user != null) {
+          print(userCreds.user!.phoneNumber);
+        }
+        isSigningIn = false;
+      },
+      verificationFailed: (e) {
+        print('Failed veriii : $phone');
+        print(e.message);
+      },
+      codeSent: codeSentCallback,
+      codeAutoRetrievalTimeout: codeAutoRetrievalTimeoutCallback,
+      timeout: Duration(minutes: 2),
+    );
+  }
+
   void logout() async {
-    await googleSignIn.disconnect();
+    var currentUser = googleSignIn.currentUser;
+    if (currentUser != null) {
+      await googleSignIn.disconnect();
+    }
 
     FirebaseAuth.instance.signOut();
   }

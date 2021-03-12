@@ -4,9 +4,28 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:othello/providers/google_sign_in.dart';
 import 'package:provider/provider.dart';
 
-class SideDrawer extends StatelessWidget {
-  final photoURL = FirebaseAuth.instance.currentUser?.photoURL;
-  final userName = FirebaseAuth.instance.currentUser?.displayName;
+class SideDrawer extends StatefulWidget {
+  @override
+  _SideDrawerState createState() => _SideDrawerState();
+}
+
+class _SideDrawerState extends State<SideDrawer> {
+  String? photoURL;
+
+  String? userName;
+
+  String? phoneNumber;
+
+  @override
+  void initState() {
+    super.initState();
+    photoURL = FirebaseAuth.instance.currentUser?.photoURL;
+
+    userName = FirebaseAuth.instance.currentUser?.displayName;
+
+    phoneNumber = FirebaseAuth.instance.currentUser?.phoneNumber;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -23,10 +42,16 @@ class SideDrawer extends StatelessWidget {
                 radius: 30,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(30),
-                  child: Image.network(photoURL!),
+                  child: photoURL != null
+                      ? Image.network(photoURL!)
+                      : FaIcon(
+                          FontAwesomeIcons.phoneAlt,
+                          color: Colors.green,
+                        ),
                 ),
               ),
-              title: Text(userName!),
+              title:
+                  userName!.isNotEmpty ? Text(userName!) : Text(phoneNumber!),
             ),
             ListTile(
               leading: FaIcon(FontAwesomeIcons.signOutAlt),
