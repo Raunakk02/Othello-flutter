@@ -13,7 +13,7 @@ class GameInfo {
     _initValues();
     WidgetsBinding.instance!.addPostFrameCallback((_) => _markPossibleMoves());
   }
-  
+
   late double _boardWidth;
   late double cellWidth;
   RoomData _roomData;
@@ -22,6 +22,7 @@ class GameInfo {
   bool _flipping = false;
 
   int get boardHeight => _roomData.height;
+
   int get boardLength => _roomData.length;
 
   UnmodifiableListView<UnmodifiableListView<int>> get board =>
@@ -40,8 +41,6 @@ class GameInfo {
 
   void undo() {
     _roomData.undo();
-
-    PieceState.whiteTurn = _roomData.isWhiteTurn;
     if (!_flipping) _syncEachPiece();
 
     WidgetsBinding.instance!.addPostFrameCallback((_) {
@@ -58,11 +57,7 @@ class GameInfo {
 
   ///If there is a possibility of End Game do not left context null.
   void _markPossibleMovesOrEndGame({BuildContext? context}) {
-    if (!_markPossibleMoves()) {
-      PieceState.whiteTurn = !PieceState.whiteTurn;
-      _roomData.changeTurn();
-      if (!_markPossibleMoves() && context != null) _endGame(context);
-    }
+    if (!_markPossibleMoves() && context != null) _endGame(context);
   }
 
   void _endGame(BuildContext context) {
@@ -78,24 +73,23 @@ class GameInfo {
         });
   }
 
-  bool _markPossibleMoves({bool? whiteTurn}) {
-    int value = whiteTurn ?? _roomData.isWhiteTurn ? 0 : 1;
+  bool _markPossibleMoves() {
+    var possibleMoves = _roomData.getPossibleMovesList();
     bool havePossibleMove = false;
-    for (int i = 0; i < _roomData.height; i++)
-      for (int j = 0; j < _roomData.length; j++) {
-        if (board[i][j] != -1) continue;
-        bool setThisCellState = false;
+    for (int i = 0; i < boardHeight; i++) {
+      for (int j = 0; j < boardLength; j++) {
         if (pieceStates[i][j]?.possibleMove ?? true) {
           pieceStates[i][j]!.possibleMove = false;
-          setThisCellState = true;
+          pieceStates[i][j]?.stateFn(operate: false);
         }
-        if (_roomData.getPiecesToFlip(i, j, value).length > 0) {
-          pieceStates[i][j]!.possibleMove = true;
-          setThisCellState = true;
-          havePossibleMove = true;
-        }
-        if (setThisCellState) pieceStates[i][j]?.stateFn(operate: false);
       }
+    }
+    for (var possibleMove in possibleMoves) {
+      int i = possibleMove[0], j = possibleMove[1];
+      pieceStates[i][j]!.possibleMove = true;
+      pieceStates[i][j]?.stateFn(operate: false);
+      havePossibleMove = true;
+    }
     return havePossibleMove;
   }
 
@@ -116,6 +110,7 @@ class GameInfo {
 
   void _syncEachPiece() {
     for (int i = 0; i < _roomData.height; i++)
-      for (int j = 0; j < _roomData.length; j++) pieceStates[i][j]?.set(board[i][j]);
+      for (int j = 0; j < _roomData.length; j++)
+        pieceStates[i][j]?.set(board[i][j]);
   }
 }

@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:othello/components/piece.dart';
 
 extension on List<List<int>> {
   List<List<int>> get clone {
@@ -61,9 +62,16 @@ class RoomData {
   List<ChatMessage> _chats;
   DateTime _timestamp;
 
-  int get playerMove => isWhiteTurn ? 0 : 1;
+  int get _playerMove => _isWhiteTurn ? 0 : 1;
 
-  bool get isWhiteTurn => _playerIdTurn == whiteId;
+  bool get _isWhiteTurn => playerIdTurn == whiteId;
+
+  String get playerIdTurn => _playerIdTurn;
+
+  set playerIdTurn(String str) {
+    _playerIdTurn = str;
+    PieceState.whiteTurn = _isWhiteTurn;
+  }
 
   Duration get blackTotalDuration => _blackTotalDuration;
 
@@ -94,25 +102,44 @@ class RoomData {
     return board;
   }
 
-  void changeTurn() => _playerIdTurn = isWhiteTurn ? blackId : whiteId;
+  void changeTurn() {
+    _flipTurn();
+    var possibleMoves = getPossibleMovesList();
+    print(possibleMoves);
+    if (possibleMoves.length <= 0) _flipTurn();
+    print('whiteTurn: $_isWhiteTurn');
+  }
+
+  void _flipTurn() => playerIdTurn = _isWhiteTurn ? blackId : whiteId;
+
+  List<List<int>> getPossibleMovesList() {
+    List<List<int>> res = [];
+    for (int i = 0; i < height; i++) {
+      for (int j = 0; j < length; j++) {
+        if (_currentBoard[i][j] != -1) continue;
+        if (getPiecesToFlip(i, j, _playerMove).length > 0) res.add([i, j]);
+      }
+    }
+    return res;
+  }
 
   void undo() {
     _currentBoard = _lastMoves.last.board;
-    _playerIdTurn = _lastMoves.last.playerIdTurn;
+    playerIdTurn = _lastMoves.last.playerIdTurn;
     _timestamp = _timestamp.subtract(_lastMoves.last.duration);
     _lastMoves.removeLast();
   }
 
   List<List<List<int>>?> makeMove(int i, int j) {
     _updateLastMoves();
-    _currentBoard[i][j] = playerMove;
+    _currentBoard[i][j] = _playerMove;
     var piecesToFlip = getPiecesToFlip(i, j, _currentBoard[i][j]);
-    if (isWhiteTurn)
+    if (_isWhiteTurn)
       _whiteTotalDuration += DateTime.now().difference(_timestamp);
     else
       _blackTotalDuration += DateTime.now().difference(_timestamp);
-    changeTurn();
     _flipPieces(piecesToFlip);
+    changeTurn();
     _timestamp = DateTime.now();
     return piecesToFlip;
   }
@@ -121,7 +148,7 @@ class RoomData {
     final currentMove = MoveData(
         board: _currentBoard.clone,
         duration: DateTime.now().difference(_timestamp),
-        playerIdTurn: _playerIdTurn);
+        playerIdTurn: playerIdTurn);
     _lastMoves.add(currentMove);
   }
 
