@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:othello/components/piece.dart';
 
 extension on List<List<int>> {
@@ -15,7 +16,7 @@ extension on List<List<int>> {
   }
 }
 
-class RoomData {
+class RoomData extends ChangeNotifier {
   RoomData._raw({
     required this.roomId,
     required this.blackId,
@@ -33,7 +34,7 @@ class RoomData {
         this.height = height,
         this._timestamp = timestamp ?? DateTime.now(),
         this._currentBoard = currentBoard ?? _initializeBoard(length, height),
-        this._playerIdTurn = whiteFirstTurn ? whiteId : blackId,
+        this.__playerIdTurn = whiteFirstTurn ? whiteId : blackId,
         this._lastMoves = lastMoves ?? [],
         this._chats = chats ?? [],
         this._blackTotalDuration = blackTotalDuration,
@@ -55,27 +56,33 @@ class RoomData {
 
   final String roomId, blackId, whiteId;
   final int height, length;
-  String _playerIdTurn;
+  String __playerIdTurn;
   List<List<int>> _currentBoard;
   List<MoveData> _lastMoves;
   Duration _blackTotalDuration, _whiteTotalDuration;
   List<ChatMessage> _chats;
   DateTime _timestamp;
 
-  int get _playerMove => _isWhiteTurn ? 0 : 1;
+  int get _currentPlayerMove => _playerMove(isWhiteTurn);
 
-  bool get _isWhiteTurn => playerIdTurn == whiteId;
+  int _playerMove(bool whiteTurn) => whiteTurn ? 0 : 1;
 
-  String get playerIdTurn => _playerIdTurn;
+  bool get isWhiteTurn => _playerIdTurn == whiteId;
 
-  set playerIdTurn(String str) {
-    _playerIdTurn = str;
-    PieceState.whiteTurn = _isWhiteTurn;
+  String get _playerIdTurn => __playerIdTurn;
+
+  set _playerIdTurn(String str) {
+    __playerIdTurn = str;
+    PieceState.whiteTurn = isWhiteTurn;
+    notifyListeners();
   }
 
   Duration get blackTotalDuration => _blackTotalDuration;
 
   Duration get whiteTotalDuration => _whiteTotalDuration;
+
+  Duration getTotalDuration(bool forWhite) =>
+      forWhite ? _whiteTotalDuration : blackTotalDuration;
 
   UnmodifiableListView<ChatMessage> get chats => UnmodifiableListView(_chats);
 
@@ -86,6 +93,15 @@ class RoomData {
     for (int i = 0; i < height; i++)
       res.add(UnmodifiableListView(_currentBoard[i]));
     return UnmodifiableListView(res);
+  }
+
+  int totalPieces({forWhite = true}) {
+    int res = 0;
+    for (int i = 0; i < height; i++)
+      for (int j = 0; j < length; j++)
+        if (currentBoard[i][j] == _playerMove(forWhite)) res++;
+
+    return res;
   }
 
   static List<List<int>> _initializeBoard(int length, int height) {
@@ -107,19 +123,18 @@ class RoomData {
   void changeTurn() {
     _flipTurn();
     var possibleMoves = getPossibleMovesList();
-    print(possibleMoves);
     if (possibleMoves.length <= 0) _flipTurn();
-    print('whiteTurn: $_isWhiteTurn');
   }
 
-  void _flipTurn() => playerIdTurn = _isWhiteTurn ? blackId : whiteId;
+  void _flipTurn() => _playerIdTurn = isWhiteTurn ? blackId : whiteId;
 
   List<List<int>> getPossibleMovesList() {
     List<List<int>> res = [];
     for (int i = 0; i < height; i++) {
       for (int j = 0; j < length; j++) {
         if (_currentBoard[i][j] != -1) continue;
-        if (getPiecesToFlip(i, j, _playerMove).length > 0) res.add([i, j]);
+        if (getPiecesToFlip(i, j, _currentPlayerMove).length > 0)
+          res.add([i, j]);
       }
     }
     return res;
@@ -127,16 +142,16 @@ class RoomData {
 
   void undo() {
     _currentBoard = _lastMoves.last.board;
-    playerIdTurn = _lastMoves.last.playerIdTurn;
+    _playerIdTurn = _lastMoves.last.playerIdTurn;
     _timestamp = _timestamp.subtract(_lastMoves.last.duration);
     _lastMoves.removeLast();
   }
 
   List<List<List<int>>?> makeMove(int i, int j) {
     _updateLastMoves();
-    _currentBoard[i][j] = _playerMove;
+    _currentBoard[i][j] = _currentPlayerMove;
     var piecesToFlip = getPiecesToFlip(i, j, _currentBoard[i][j]);
-    if (_isWhiteTurn)
+    if (isWhiteTurn)
       _whiteTotalDuration += DateTime.now().difference(_timestamp);
     else
       _blackTotalDuration += DateTime.now().difference(_timestamp);
@@ -150,7 +165,7 @@ class RoomData {
     final currentMove = MoveData(
         board: _currentBoard.clone,
         duration: DateTime.now().difference(_timestamp),
-        playerIdTurn: playerIdTurn);
+        playerIdTurn: _playerIdTurn);
     _lastMoves.add(currentMove);
   }
 
