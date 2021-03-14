@@ -82,7 +82,6 @@ class PieceState extends State<Piece> {
         onTap: () {
           if (_value == -1 && possibleMove) {
             if (!whiteTurn) _value = 1;
-            whiteTurn = !whiteTurn;
             stateFn();
             (widget.onTap ?? () {})(this);
           }
