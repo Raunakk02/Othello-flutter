@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:othello/utils/globals.dart';
 import 'package:firebase_core/firebase_core.dart';
 
-import 'screens/home_page.dart';
+import 'screens/game_room.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await Hive.initFlutter();
+  await Hive.openBox('Rooms');
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
@@ -37,6 +41,6 @@ class MainPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Globals.mediaQueryData = MediaQuery.of(context);
-    return HomePage();
+    return GameRoom();
   }
 }
