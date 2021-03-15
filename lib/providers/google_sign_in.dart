@@ -13,7 +13,7 @@ class GoogleSignInProvider with ChangeNotifier {
 
   bool get isSigningIn => _isSigningIn;
 
-  set isSigningIn(bool isSigninIn) {
+  set setSigningIn(bool isSigninIn) {
     _isSigningIn = isSigninIn;
     notifyListeners();
   }
@@ -24,7 +24,7 @@ class GoogleSignInProvider with ChangeNotifier {
     final user = await googleSignIn.signIn();
 
     if (user == null) {
-      isSigningIn = false;
+      setSigningIn = false;
       return;
     } else {
       final googleAuth = await user.authentication;
@@ -35,7 +35,7 @@ class GoogleSignInProvider with ChangeNotifier {
       );
 
       await FirebaseAuth.instance.signInWithCredential(credential);
-      isSigningIn = false;
+      setSigningIn = false;
     }
   }
 

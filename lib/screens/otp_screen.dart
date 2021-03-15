@@ -13,6 +13,8 @@ class _OtpScreenState extends State<OtpScreen> {
   final _pinPutController = TextEditingController();
   final _pinPutFocusNode = FocusNode();
 
+  var _isEnabled = true;
+
   late final _phone;
   late String _verificationCode;
 
@@ -26,6 +28,7 @@ class _OtpScreenState extends State<OtpScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: PinPut(
+        enabled: _isEnabled,
         fieldsCount: 6,
         eachFieldHeight: 60.0,
         withCursor: true,
@@ -68,18 +71,29 @@ class _OtpScreenState extends State<OtpScreen> {
     required void Function(String, int?) codeSentCallback,
     required void Function(String) codeAutoRetrievalTimeoutCallback,
   }) async {
-    // _isSigningIn = true;
     var auth = FirebaseAuth.instance;
+    setState(() {
+      _isEnabled = false;
+    });
 
     await auth.verifyPhoneNumber(
       phoneNumber: '+$phone',
       verificationCompleted: (creds) async {
+        setState(() {
+          _isEnabled = false;
+        });
         print('Auto Veriiii completed : $phone');
         var userCreds = await auth.signInWithCredential(creds);
-        if (userCreds.user != null) {
-          print(userCreds.user!.phoneNumber);
+        if (auth.currentUser != null) {
+          print('Phone Auto auth success: ${userCreds.user!.phoneNumber} \n'
+              'Loading Home Page');
+          FirebaseAuth.instance.currentUser!.reload();
+
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/',
+            (route) => false,
+          );
         }
-        // isSigningIn = false;
       },
       verificationFailed: (e) {
         print('Failed veriii : $phone');
@@ -87,7 +101,7 @@ class _OtpScreenState extends State<OtpScreen> {
       },
       codeSent: codeSentCallback,
       codeAutoRetrievalTimeout: codeAutoRetrievalTimeoutCallback,
-      timeout: Duration(minutes: 2),
+      timeout: Duration(minutes: 1),
     );
   }
 
@@ -97,17 +111,18 @@ class _OtpScreenState extends State<OtpScreen> {
     print('DCD');
     if (_isInit) {
       _phone = ModalRoute.of(context)?.settings.arguments as String;
-      // final provider =
-      //     Provider.of<GoogleSignInProvider>(context, listen: false);
-      // provider.isSigningIn = true;
       verifyPhone(
         phone: _phone,
         codeSentCallback: codeSentFunc,
         codeAutoRetrievalTimeoutCallback: codeAutoRetrievalTimeoutFunc,
       );
-      // provider.isSigningIn = false;
       _isInit = false;
     }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override
@@ -126,31 +141,47 @@ class _OtpScreenState extends State<OtpScreen> {
             height: 10,
           ),
           OutlinedButton(
-            onPressed: () async {
-              try {
-                var auth = FirebaseAuth.instance;
-                var userCreds = await auth.signInWithCredential(
-                  PhoneAuthProvider.credential(
-                    verificationId: _verificationCode,
-                    smsCode: _pinPutController.text.trim(),
-                  ),
-                );
-                if (auth.currentUser != null) {
-                  print('Phone auth success: ${userCreds.user!.phoneNumber} \n'
-                      'Loading Home Page');
-                  FirebaseAuth.instance.currentUser!.reload();
+            onPressed: _isEnabled
+                ? () async {
+                    setState(() {
+                      _isEnabled = false;
+                    });
+                    try {
+                      var auth = FirebaseAuth.instance;
+                      var userCreds = await auth.signInWithCredential(
+                        PhoneAuthProvider.credential(
+                          verificationId: _verificationCode,
+                          smsCode: _pinPutController.text.trim(),
+                        ),
+                      );
+                      if (auth.currentUser != null) {
+                        print(
+                            'Phone auth success: ${userCreds.user!.phoneNumber} \n'
+                            'Loading Home Page');
+                        FirebaseAuth.instance.currentUser!.reload();
 
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    '/',
-                    (route) => false,
-                  );
-                }
-              } catch (e) {
-                FocusScope.of(context).unfocus();
-                _showSnackBar(e.toString());
-              }
-            },
-            child: Text('Verify OTP'),
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                          '/',
+                          (route) => false,
+                        );
+                      }
+                    } catch (e) {
+                      FocusScope.of(context).unfocus();
+                      _showSnackBar(e.toString());
+                      setState(() {
+                        _isEnabled = true;
+                      });
+                    }
+                  }
+                : null,
+            child: _isEnabled
+                ? Text('Verify OTP')
+                : Container(
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      backgroundColor: Colors.green,
+                    ),
+                  ),
           ),
         ],
       ),
@@ -182,6 +213,10 @@ class _OtpScreenState extends State<OtpScreen> {
 
   void codeSentFunc(verificationID, resendToken) {
     print('Codee senttt : $_phone');
+    _showSnackBar('OTP sent to $_phone');
+    setState(() {
+      _isEnabled = true;
+    });
 
     setState(() {
       _verificationCode = verificationID;
@@ -196,7 +231,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
   void _showSnackBar(String message) {
     final snackBar = SnackBar(
-      duration: const Duration(seconds: 60),
+      duration: const Duration(seconds: 5),
       content: Container(
         height: 80.0,
         child: Center(
