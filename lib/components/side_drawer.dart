@@ -10,20 +10,13 @@ class SideDrawer extends StatefulWidget {
 }
 
 class _SideDrawerState extends State<SideDrawer> {
-  String? photoURL;
-
-  String? userName;
-
-  String? phoneNumber;
+  late User currentUser;
 
   @override
   void initState() {
     super.initState();
-    // photoURL = FirebaseAuth.instance.currentUser?.photoURL;
-
-    // userName = FirebaseAuth.instance.currentUser?.displayName;
-
-    // phoneNumber = FirebaseAuth.instance.currentUser?.phoneNumber;
+    var auth = FirebaseAuth.instance;
+    currentUser = auth.currentUser!;
   }
 
   @override
@@ -37,22 +30,24 @@ class _SideDrawerState extends State<SideDrawer> {
         ),
         body: ListView(
           children: [
-            // ListTile(
-            //   leading: CircleAvatar(
-            //     radius: 30,
-            //     child: ClipRRect(
-            //       borderRadius: BorderRadius.circular(30),
-            //       child: photoURL != null
-            //           ? Image.network(photoURL!)
-            //           : FaIcon(
-            //               FontAwesomeIcons.phoneAlt,
-            //               color: Colors.green,
-            //             ),
-            //     ),
-            //   ),
-            //   title:
-            //       userName!.isNotEmpty ? Text(userName!) : Text(phoneNumber!),
-            // ),
+            ListTile(
+              leading: CircleAvatar(
+                radius: 30,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(30),
+                  child: currentUser.photoURL != null
+                      ? Image.network(currentUser.photoURL!)
+                      : FaIcon(
+                          FontAwesomeIcons.phoneAlt,
+                          color: Colors.green,
+                        ),
+                ),
+              ),
+              title: currentUser.phoneNumber == null
+                  ? Text(currentUser.displayName!)
+                  : Text(currentUser.phoneNumber!),
+              // title: Text(currentUser.phoneNumber!),
+            ),
             ListTile(
               leading: FaIcon(FontAwesomeIcons.signOutAlt),
               title: Text('Logout'),
