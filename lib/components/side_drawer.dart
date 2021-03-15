@@ -46,7 +46,6 @@ class _SideDrawerState extends State<SideDrawer> {
               title: currentUser.phoneNumber == null
                   ? Text(currentUser.displayName!)
                   : Text(currentUser.phoneNumber!),
-              // title: Text(currentUser.phoneNumber!),
             ),
             ListTile(
               leading: FaIcon(FontAwesomeIcons.signOutAlt),

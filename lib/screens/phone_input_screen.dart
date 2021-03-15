@@ -26,6 +26,7 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
           Container(
             margin: EdgeInsets.all(30),
             child: TextField(
+              key: Key('phoneTextField'),
               decoration: InputDecoration(
                 labelText: 'Enter phone number with Country code',
                 icon: FaIcon(
@@ -50,6 +51,7 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
             ),
           ),
           TextButton(
+            key: Key('confirmPhoneButton'),
             onPressed: () {
               if (phoneNumberController.text != '') {
                 Navigator.of(context).pushNamed(

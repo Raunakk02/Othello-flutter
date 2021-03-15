@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:othello/components/google_signup_button.dart';
 import 'package:othello/components/phone_signup_button.dart';
-import 'package:othello/screens/phone_input_screen.dart';
 
 class SignUpScreen extends StatelessWidget {
   static const routeName = '/sign-up-screen';
