@@ -23,6 +23,7 @@ class _SideDrawerState extends State<SideDrawer> {
   Widget build(BuildContext context) {
     return Drawer(
       child: Scaffold(
+        backgroundColor: Colors.brown,
         appBar: AppBar(
           elevation: 0,
           backgroundColor: Colors.transparent,
