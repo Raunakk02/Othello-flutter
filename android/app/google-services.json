@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "515886391198-0gndv64l47ckpomus9dfekfb5uvvbm4b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.vishnuworld.othello",
+            "certificate_hash": "df4e4a1f918118cb8ba2e3dae0d482b8928705bb"
+          }
+        },
+        {
           "client_id": "515886391198-8g4gths17v8nd22k9m0oerv355ih4tbo.apps.googleusercontent.com",
           "client_type": 3
         }

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -8,12 +7,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:othello/components/flip_piece.dart';
 import 'package:othello/components/piece.dart';
+import 'package:othello/components/side_drawer.dart';
 import 'package:othello/objects/game_info.dart';
 import 'package:othello/objects/room_data.dart';
 import 'package:othello/utils/globals.dart';
 import 'package:provider/provider.dart';
 
 class GameRoom extends StatefulWidget {
+  static const routeName = '/home-page';
   GameRoom({this.resetGame = false});
 
   final bool resetGame;
@@ -31,7 +32,6 @@ class _GameRoomState extends State<GameRoom>
   void initState() {
     _gameInfo = GameInfo(RoomData.offlinePvPNewGame(8, 8, widget.resetGame));
     _initStack();
-    print('Firebase Auth User Test : ${FirebaseAuth.instance.currentUser}');
     super.initState();
   }
 
@@ -85,6 +85,7 @@ class _GameRoomState extends State<GameRoom>
           )
         ],
       ),
+      drawer: SideDrawer(),
       body: ChangeNotifierProvider<RoomData>(
         create: (context) => _gameInfo.roomData,
         child: Padding(
