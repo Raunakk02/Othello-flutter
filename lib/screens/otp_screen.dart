@@ -1,9 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:othello/providers/google_sign_in.dart';
-import 'package:othello/screens/home_page.dart';
 import 'package:pinput/pin_put/pin_put.dart';
-import 'package:provider/provider.dart';
 
 class OtpScreen extends StatefulWidget {
   static const routeName = 'otp-screen';
@@ -45,24 +42,52 @@ class _OtpScreenState extends State<OtpScreen> {
           ),
         ),
         preFilledWidget: Text('-'),
-        onSubmit: (pin) async {
-          try {
-            var userCreds = await FirebaseAuth.instance.signInWithCredential(
-              PhoneAuthProvider.credential(
-                verificationId: _verificationCode,
-                smsCode: pin,
-              ),
-            );
-            if (userCreds.user != null) {
-              print(userCreds.user!.phoneNumber);
-            }
-            Navigator.of(context).pushNamed(HomePage.routeName);
-          } catch (e) {
-            FocusScope.of(context).unfocus();
-            _showSnackBar('Invalid OTP');
-          }
-        },
+        // onSubmit: (pin) async {
+        //   try {
+        //     var userCreds = await FirebaseAuth.instance.signInWithCredential(
+        //       PhoneAuthProvider.credential(
+        //         verificationId: _verificationCode,
+        //         smsCode: pin,
+        //       ),
+        //     );
+        //     if (userCreds.user != null) {
+        //       print(userCreds.user!.phoneNumber);
+        //     }
+        //     Navigator.of(context).pushNamed(HomePage.routeName);
+        //   } catch (e) {
+        //     FocusScope.of(context).unfocus();
+        //     _showSnackBar('Invalid OTP');
+        //   }
+        // },
       ),
+    );
+  }
+
+  Future verifyPhone({
+    required String phone,
+    required void Function(String, int?) codeSentCallback,
+    required void Function(String) codeAutoRetrievalTimeoutCallback,
+  }) async {
+    // _isSigningIn = true;
+    var auth = FirebaseAuth.instance;
+
+    await auth.verifyPhoneNumber(
+      phoneNumber: '+$phone',
+      verificationCompleted: (creds) async {
+        print('Auto Veriiii completed : $phone');
+        var userCreds = await auth.signInWithCredential(creds);
+        if (userCreds.user != null) {
+          print(userCreds.user!.phoneNumber);
+        }
+        // isSigningIn = false;
+      },
+      verificationFailed: (e) {
+        print('Failed veriii : $phone');
+        print(e.message);
+      },
+      codeSent: codeSentCallback,
+      codeAutoRetrievalTimeout: codeAutoRetrievalTimeoutCallback,
+      timeout: Duration(minutes: 2),
     );
   }
 
@@ -72,13 +97,15 @@ class _OtpScreenState extends State<OtpScreen> {
     print('DCD');
     if (_isInit) {
       _phone = ModalRoute.of(context)?.settings.arguments as String;
-      final provider =
-          Provider.of<GoogleSignInProvider>(context, listen: false);
-      provider.verifyPhone(
+      // final provider =
+      //     Provider.of<GoogleSignInProvider>(context, listen: false);
+      // provider.isSigningIn = true;
+      verifyPhone(
         phone: _phone,
         codeSentCallback: codeSentFunc,
         codeAutoRetrievalTimeoutCallback: codeAutoRetrievalTimeoutFunc,
       );
+      // provider.isSigningIn = false;
       _isInit = false;
     }
   }
@@ -91,8 +118,41 @@ class _OtpScreenState extends State<OtpScreen> {
         backgroundColor: Colors.transparent,
         title: Text('Verify Phone'),
       ),
-      body: Center(
-        child: animatingBorders(),
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          animatingBorders(),
+          SizedBox(
+            height: 10,
+          ),
+          OutlinedButton(
+            onPressed: () async {
+              try {
+                var auth = FirebaseAuth.instance;
+                var userCreds = await auth.signInWithCredential(
+                  PhoneAuthProvider.credential(
+                    verificationId: _verificationCode,
+                    smsCode: _pinPutController.text.trim(),
+                  ),
+                );
+                if (auth.currentUser != null) {
+                  print('Phone auth success: ${userCreds.user!.phoneNumber} \n'
+                      'Loading Home Page');
+                  FirebaseAuth.instance.currentUser!.reload();
+
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    '/',
+                    (route) => false,
+                  );
+                }
+              } catch (e) {
+                FocusScope.of(context).unfocus();
+                _showSnackBar(e.toString());
+              }
+            },
+            child: Text('Verify OTP'),
+          ),
+        ],
       ),
     );
   }
@@ -136,13 +196,13 @@ class _OtpScreenState extends State<OtpScreen> {
 
   void _showSnackBar(String message) {
     final snackBar = SnackBar(
-      duration: const Duration(seconds: 3),
+      duration: const Duration(seconds: 60),
       content: Container(
         height: 80.0,
         child: Center(
           child: Text(
             message,
-            style: const TextStyle(fontSize: 25.0),
+            style: const TextStyle(fontSize: 12.0),
           ),
         ),
       ),

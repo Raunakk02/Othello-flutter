@@ -28,7 +28,6 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     _initStack();
-    print('Firebase Auth User Test : ${FirebaseAuth.instance.currentUser}');
     super.initState();
   }
 

@@ -51,8 +51,8 @@ class MainPage extends StatelessWidget {
   Widget build(BuildContext context) {
     Globals.mediaQueryData = MediaQuery.of(context);
     return StreamBuilder(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (_, authSnapshot) {
+      stream: FirebaseAuth.instance.userChanges(),
+      builder: (_, AsyncSnapshot<User?> authSnapshot) {
         final provider =
             Provider.of<GoogleSignInProvider>(context, listen: false);
         if (provider.isSigningIn) {

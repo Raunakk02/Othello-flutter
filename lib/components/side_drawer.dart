@@ -19,11 +19,11 @@ class _SideDrawerState extends State<SideDrawer> {
   @override
   void initState() {
     super.initState();
-    photoURL = FirebaseAuth.instance.currentUser?.photoURL;
+    // photoURL = FirebaseAuth.instance.currentUser?.photoURL;
 
-    userName = FirebaseAuth.instance.currentUser?.displayName;
+    // userName = FirebaseAuth.instance.currentUser?.displayName;
 
-    phoneNumber = FirebaseAuth.instance.currentUser?.phoneNumber;
+    // phoneNumber = FirebaseAuth.instance.currentUser?.phoneNumber;
   }
 
   @override
@@ -37,22 +37,22 @@ class _SideDrawerState extends State<SideDrawer> {
         ),
         body: ListView(
           children: [
-            ListTile(
-              leading: CircleAvatar(
-                radius: 30,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(30),
-                  child: photoURL != null
-                      ? Image.network(photoURL!)
-                      : FaIcon(
-                          FontAwesomeIcons.phoneAlt,
-                          color: Colors.green,
-                        ),
-                ),
-              ),
-              title:
-                  userName!.isNotEmpty ? Text(userName!) : Text(phoneNumber!),
-            ),
+            // ListTile(
+            //   leading: CircleAvatar(
+            //     radius: 30,
+            //     child: ClipRRect(
+            //       borderRadius: BorderRadius.circular(30),
+            //       child: photoURL != null
+            //           ? Image.network(photoURL!)
+            //           : FaIcon(
+            //               FontAwesomeIcons.phoneAlt,
+            //               color: Colors.green,
+            //             ),
+            //     ),
+            //   ),
+            //   title:
+            //       userName!.isNotEmpty ? Text(userName!) : Text(phoneNumber!),
+            // ),
             ListTile(
               leading: FaIcon(FontAwesomeIcons.signOutAlt),
               title: Text('Logout'),
