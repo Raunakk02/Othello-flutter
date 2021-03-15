@@ -3,7 +3,13 @@ import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:othello/components/piece.dart';
+
+abstract class Savable {
+  Map<String, dynamic> toMap();
+}
 
 extension on List<List<int>> {
   List<List<int>> get clone {
@@ -16,7 +22,28 @@ extension on List<List<int>> {
   }
 }
 
-class RoomData extends ChangeNotifier {
+extension convertToMaps<T extends Savable> on List<T> {
+  List<Map<String, dynamic>> toMaps() {
+    List<Map<String, dynamic>> res = [];
+    for (var elem in this) res.add(elem.toMap());
+    return res;
+  }
+}
+
+abstract class RoomDataLabels {
+  static const roomId = 'roomId',
+      blackId = 'blackId',
+      whiteId = 'whiteId',
+      playerIdTurn = 'playerIdTurn',
+      currentBoard = 'currentBoard',
+      lastMoves = 'lastMoves',
+      blackTotalDuration = 'blackTotalDuration',
+      whiteTotalDuration = 'whiteTotalDuration',
+      chats = 'chats',
+      timestamp = 'timestamp';
+}
+
+class RoomData extends ChangeNotifier with Savable {
   RoomData._raw({
     required this.roomId,
     required this.blackId,
@@ -30,18 +57,29 @@ class RoomData extends ChangeNotifier {
     Duration blackTotalDuration = const Duration(),
     Duration whiteTotalDuration = const Duration(),
     bool whiteFirstTurn = false,
-  })  : this.length = length,
-        this.height = height,
+  })  : this.length = currentBoard?[0].length ?? length,
+        this.height = currentBoard?.length ?? height,
         this._timestamp = timestamp ?? DateTime.now(),
         this._currentBoard = currentBoard ?? _initializeBoard(length, height),
         this.__playerIdTurn = whiteFirstTurn ? whiteId : blackId,
         this._lastMoves = lastMoves ?? [],
         this._chats = chats ?? [],
         this._blackTotalDuration = blackTotalDuration,
-        this._whiteTotalDuration = whiteTotalDuration;
+        this._whiteTotalDuration = whiteTotalDuration {
+    PieceState.whiteTurn = isWhiteTurn;
+  }
 
-  factory RoomData.offlinePvPNewGame(int height, int length,
+  factory RoomData.offlinePvPNewGame(int height, int length, bool resetGame,
       [bool whiteFirstTurn = false]) {
+    if (!resetGame) {
+      var box = Hive.box(hiveBoxName);
+      var _rawData = box.get(hiveOfflinePvPKey);
+      if (_rawData != null) {
+        var map = Map<String, dynamic>.from(_rawData);
+        return RoomData.fromMap(map);
+      }
+    }
+
     height = max(2, height);
     length = max(2, length);
     return RoomData._raw(
@@ -54,6 +92,32 @@ class RoomData extends ChangeNotifier {
     );
   }
 
+  factory RoomData.fromMap(Map<String, dynamic> map) {
+    String playerTurnId = map[RoomDataLabels.playerIdTurn];
+    String whiteId = map[RoomDataLabels.whiteId];
+    bool whiteTurn = playerTurnId == whiteId;
+
+    return RoomData._raw(
+      roomId: map[RoomDataLabels.roomId],
+      blackId: map[RoomDataLabels.blackId],
+      whiteId: whiteId,
+      timestamp: map[RoomDataLabels.timestamp],
+      currentBoard:
+          map[RoomDataLabels.currentBoard]?.cast<List<int>>()?.toList(),
+      lastMoves: MoveData.fromMaps(
+          map[RoomDataLabels.lastMoves]?.cast<Map>()?.toList() ?? []),
+      chats: ChatMessage.fromMaps(
+          map[RoomDataLabels.chats]?.cast<Map>()?.toList() ?? []),
+      blackTotalDuration:
+          Duration(seconds: map[RoomDataLabels.blackTotalDuration]),
+      whiteTotalDuration:
+          Duration(seconds: map[RoomDataLabels.whiteTotalDuration]),
+      whiteFirstTurn: whiteTurn,
+    );
+  }
+
+  static const hiveBoxName = 'Rooms';
+  static const hiveOfflinePvPKey = 'offlinePvP';
   final String roomId, blackId, whiteId;
   final int height, length;
   String __playerIdTurn;
@@ -94,6 +158,19 @@ class RoomData extends ChangeNotifier {
       res.add(UnmodifiableListView(_currentBoard[i]));
     return UnmodifiableListView(res);
   }
+
+  Map<String, dynamic> toMap() => {
+        RoomDataLabels.roomId: roomId,
+        RoomDataLabels.blackId: blackId,
+        RoomDataLabels.whiteId: whiteId,
+        RoomDataLabels.playerIdTurn: __playerIdTurn,
+        RoomDataLabels.currentBoard: _currentBoard,
+        RoomDataLabels.lastMoves: _lastMoves.toMaps(),
+        RoomDataLabels.blackTotalDuration: _blackTotalDuration.inSeconds,
+        RoomDataLabels.whiteTotalDuration: _whiteTotalDuration.inSeconds,
+        RoomDataLabels.chats: _chats.toMaps(),
+        RoomDataLabels.timestamp: _timestamp,
+      };
 
   int totalPieces({forWhite = true}) {
     int res = 0;
@@ -145,6 +222,7 @@ class RoomData extends ChangeNotifier {
     _playerIdTurn = _lastMoves.last.playerIdTurn;
     _timestamp = _timestamp.subtract(_lastMoves.last.duration);
     _lastMoves.removeLast();
+    _saveGameOffline();
   }
 
   List<List<List<int>>?> makeMove(int i, int j) {
@@ -158,7 +236,14 @@ class RoomData extends ChangeNotifier {
     _flipPieces(piecesToFlip);
     changeTurn();
     _timestamp = DateTime.now();
+    _saveGameOffline();
     return piecesToFlip;
+  }
+
+  void _saveGameOffline() async {
+    var box = Hive.box(hiveBoxName);
+    await box.put(hiveOfflinePvPKey, toMap());
+    print("successfully saved");
   }
 
   void _updateLastMoves() {
@@ -245,26 +330,54 @@ class RoomData extends ChangeNotifier {
   }
 }
 
-class MoveData {
+class MoveData extends Savable {
   MoveData({
     required this.board,
     required this.duration,
     required this.playerIdTurn,
   });
 
+  MoveData.fromMap(Map map)
+      : this.board = map['board'].cast<List<int>>().toList(),
+        this.duration = Duration(seconds: map['duration']),
+        this.playerIdTurn = map['playerIdTurn'];
+
+  static List<MoveData> fromMaps(List<Map> maps) =>
+      List.generate(maps.length, (i) => MoveData.fromMap(maps[i]));
+
   final List<List<int>> board;
   final Duration duration;
   final String playerIdTurn;
+
+  Map<String, dynamic> toMap() => {
+        'board': board,
+        'duration': duration.inSeconds,
+        'playerIdTurn': playerIdTurn,
+      };
 }
 
-class ChatMessage {
+class ChatMessage extends Savable {
   ChatMessage({
     required this.msg,
     required this.uid,
     required this.timestamp,
   });
 
+  static List<ChatMessage> fromMaps(List<Map> maps) =>
+      List.generate(maps.length, (i) => ChatMessage.fromMap(maps[i]));
+
+  ChatMessage.fromMap(Map map)
+      : this.msg = map['msg'],
+        this.uid = map['uid'],
+        this.timestamp = map['timestamp'];
+
   final String msg;
   final String uid;
   final Timestamp timestamp;
+
+  Map<String, dynamic> toMap() => {
+        'msg': msg,
+        'uid': uid,
+        'timestamp': timestamp,
+      };
 }

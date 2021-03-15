@@ -13,19 +13,24 @@ import 'package:othello/objects/room_data.dart';
 import 'package:othello/utils/globals.dart';
 import 'package:provider/provider.dart';
 
-class HomePage extends StatefulWidget {
+class GameRoom extends StatefulWidget {
   static const routeName = '/home-page';
+  GameRoom({this.resetGame = false});
+
+  final bool resetGame;
+
   @override
-  _HomePageState createState() => _HomePageState();
+  _GameRoomState createState() => _GameRoomState();
 }
 
-class _HomePageState extends State<HomePage>
+class _GameRoomState extends State<GameRoom>
     with SingleTickerProviderStateMixin {
-  final _gameInfo = GameInfo(RoomData.offlinePvPNewGame(8, 8));
+  late GameInfo _gameInfo;
   late List<Widget> mainStack;
 
   @override
   void initState() {
+    _gameInfo = GameInfo(RoomData.offlinePvPNewGame(8, 8, widget.resetGame));
     _initStack();
     super.initState();
   }
@@ -74,7 +79,7 @@ class _HomePageState extends State<HomePage>
               Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => HomePage(),
+                    builder: (context) => GameRoom(resetGame: true),
                   ));
             },
           )

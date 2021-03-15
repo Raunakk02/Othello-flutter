@@ -1,18 +1,25 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+<<<<<<< HEAD
 import 'package:othello/providers/google_sign_in.dart';
 import 'package:othello/screens/signup_screen.dart';
+=======
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+>>>>>>> upstream/master
 import 'package:othello/utils/globals.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:othello/utils/routes.dart';
 import 'package:provider/provider.dart';
 
-import 'screens/home_page.dart';
+import 'screens/game_room.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await Hive.initFlutter();
+  await Hive.openBox('Rooms');
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
@@ -50,6 +57,7 @@ class MainPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Globals.mediaQueryData = MediaQuery.of(context);
+<<<<<<< HEAD
     return StreamBuilder(
       stream: FirebaseAuth.instance.userChanges(),
       builder: (_, AsyncSnapshot<User?> authSnapshot) {
@@ -68,5 +76,8 @@ class MainPage extends StatelessWidget {
         }
       },
     );
+=======
+    return GameRoom();
+>>>>>>> upstream/master
   }
 }
