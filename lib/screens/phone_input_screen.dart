@@ -28,7 +28,7 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
             child: TextField(
               key: Key('phoneTextField'),
               decoration: InputDecoration(
-                labelText: 'Enter phone number with Country code',
+                labelText: 'Enter phone number',
                 icon: FaIcon(
                   FontAwesomeIcons.phoneAlt,
                   color: Colors.green,
@@ -36,7 +36,7 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
                 labelStyle: TextStyle(
                   color: Colors.white,
                 ),
-                hintText: 'Eg:- 918888844444',
+                hintText: 'Eg:- 8888844444',
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(color: Colors.grey),
                 ),
@@ -56,7 +56,7 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
               if (phoneNumberController.text != '') {
                 Navigator.of(context).pushNamed(
                   OtpScreen.routeName,
-                  arguments: phoneNumberController.text.trim(),
+                  arguments: '+91' + phoneNumberController.text.trim(),
                 );
               }
             },
