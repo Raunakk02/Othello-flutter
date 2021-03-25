@@ -81,8 +81,6 @@ class PieceState extends State<Piece> {
       child: InkWell(
         onTap: () {
           if (_value == -1 && possibleMove) {
-            if (!whiteTurn) _value = 1;
-            stateFn();
             (widget.onTap ?? () {})(this);
           }
         },

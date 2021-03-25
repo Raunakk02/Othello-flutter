@@ -9,11 +9,12 @@ import 'package:othello/objects/room_data.dart';
 import 'package:othello/utils/globals.dart';
 
 class GameInfo {
-  GameInfo(this._roomData) {
+  GameInfo(this._roomData, this._context) {
     _initValues();
     WidgetsBinding.instance!.addPostFrameCallback((_) => _markPossibleMoves());
   }
 
+  final BuildContext _context;
   late double _boardWidth;
   late double cellWidth;
   RoomData _roomData;
@@ -50,16 +51,24 @@ class GameInfo {
     });
   }
 
-  Function(PieceState state) onTapOnPiece(int i, int j, BuildContext context) =>
+  Function(PieceState state) onTapOnPiece(int i, int j,
+          [bool moveFromBot = false]) =>
       (state) async {
+        if (!moveFromBot && !_roomData.isManualTurn) return;
+        state.set(_roomData.currentPlayerMove);
         var piecesToFlip = _roomData.makeMove(i, j);
-        _markPossibleMovesOrEndGame(context: context);
         await _startFlipAnimation(piecesToFlip);
       };
 
   ///If there is a possibility of End Game do not left context null.
-  void _markPossibleMovesOrEndGame({BuildContext? context}) {
-    if (!_markPossibleMoves() && context != null) _endGame(context);
+  ///
+  /// If game end return true.
+  bool _markPossibleMovesOrEndGame({BuildContext? context}) {
+    if (!_markPossibleMoves() && context != null) {
+      _endGame(context);
+      return true;
+    }
+    return false;
   }
 
   void _endGame(BuildContext context) {
@@ -96,6 +105,7 @@ class GameInfo {
   }
 
   Future<void> _startFlipAnimation(List<List<List<int>>?> piecesToFlip) async {
+    bool gameEnded = _markPossibleMovesOrEndGame(context: _context);
     if (_flipping) return;
     _flipping = true;
     for (var levelPieces in piecesToFlip) {
@@ -108,6 +118,13 @@ class GameInfo {
     await Future.delayed(Duration(milliseconds: 400));
     _syncEachPiece();
     _flipping = false;
+    if (!_roomData.isManualTurn && !gameEnded) {
+      var nextMove = await _roomData.nextTurn;
+      print("is not manual turn, next moves: $nextMove");
+      if (nextMove == null || nextMove.length < 2) return;
+      onTapOnPiece(nextMove[0], nextMove[1], true)(
+          pieceStates[nextMove[0]][nextMove[1]]!);
+    }
   }
 
   void _syncEachPiece() {

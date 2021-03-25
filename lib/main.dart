@@ -10,7 +10,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:othello/utils/routes.dart';
 import 'package:provider/provider.dart';
 
-import 'screens/game_room.dart';
+import 'screens/main_menu.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -66,7 +66,7 @@ class MainPage extends StatelessWidget {
             ),
           );
         } else if (authSnapshot.hasData) {
-          return GameRoom();
+          return MainMenu();
         } else {
           return SignUpScreen();
         }

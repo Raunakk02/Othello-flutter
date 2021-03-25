@@ -7,7 +7,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:othello/components/flip_piece.dart';
 import 'package:othello/components/piece.dart';
-import 'package:othello/components/side_drawer.dart';
 import 'package:othello/objects/game_info.dart';
 import 'package:othello/objects/room_data.dart';
 import 'package:othello/utils/globals.dart';
@@ -15,9 +14,16 @@ import 'package:provider/provider.dart';
 
 class GameRoom extends StatefulWidget {
   static const routeName = '/home-page';
-  GameRoom({this.resetGame = false});
 
-  final bool resetGame;
+  GameRoom(this.roomData);
+
+  GameRoom.offlinePvP({bool resetGame = false})
+      : this.roomData = RoomData.offlinePvP(resetGame: resetGame);
+
+  GameRoom.offlinePvC({bool resetGame = false})
+      : this.roomData = RoomData.offlinePvC(resetGame: resetGame);
+
+  final RoomData roomData;
 
   @override
   _GameRoomState createState() => _GameRoomState();
@@ -30,7 +36,7 @@ class _GameRoomState extends State<GameRoom>
 
   @override
   void initState() {
-    _gameInfo = GameInfo(RoomData.offlinePvPNewGame(8, 8, widget.resetGame));
+    _gameInfo = GameInfo(widget.roomData, context);
     _initStack();
     super.initState();
   }
@@ -48,7 +54,7 @@ class _GameRoomState extends State<GameRoom>
                             initValue: _gameInfo.board[i][j],
                             onCreation: (state) =>
                                 _gameInfo.pieceStates[i][j] = state,
-                            onTap: _gameInfo.onTapOnPiece(i, j, context),
+                            onTap: _gameInfo.onTapOnPiece(i, j),
                           )),
                 )),
       ),
@@ -79,13 +85,15 @@ class _GameRoomState extends State<GameRoom>
               Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => GameRoom(resetGame: true),
+                    builder: (context) => GameRoom(
+                      RoomData.fromKey(widget.roomData.hiveKey,
+                          resetGame: true),
+                    ),
                   ));
             },
           )
         ],
       ),
-      drawer: SideDrawer(),
       body: ChangeNotifierProvider<RoomData>(
         create: (context) => _gameInfo.roomData,
         child: Padding(
@@ -98,7 +106,7 @@ class _GameRoomState extends State<GameRoom>
                 ),
               ),
               Container(
-                color: Colors.brown,
+                color: Colors.black,
                 padding: const EdgeInsets.all(10),
                 child: Container(
                   width: _gameInfo.cellWidth * _gameInfo.boardLength,

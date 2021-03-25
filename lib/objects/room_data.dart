@@ -6,10 +6,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:othello/components/piece.dart';
-
-abstract class Savable {
-  Map<String, dynamic> toMap();
-}
+import 'player.dart';
+import 'savable.dart';
 
 extension on List<List<int>> {
   List<List<int>> get clone {
@@ -22,18 +20,11 @@ extension on List<List<int>> {
   }
 }
 
-extension convertToMaps<T extends Savable> on List<T> {
-  List<Map<String, dynamic>> toMaps() {
-    List<Map<String, dynamic>> res = [];
-    for (var elem in this) res.add(elem.toMap());
-    return res;
-  }
-}
-
 abstract class RoomDataLabels {
   static const roomId = 'roomId',
-      blackId = 'blackId',
-      whiteId = 'whiteId',
+      blackPlayer = 'blackPlayer',
+      hiveKey = 'hiveKey',
+      whitePlayer = 'whitePlayer',
       playerIdTurn = 'playerIdTurn',
       currentBoard = 'currentBoard',
       lastMoves = 'lastMoves',
@@ -46,8 +37,9 @@ abstract class RoomDataLabels {
 class RoomData extends ChangeNotifier with Savable {
   RoomData._raw({
     required this.roomId,
-    required this.blackId,
-    required this.whiteId,
+    required this.hiveKey,
+    required this.blackPlayer,
+    required this.whitePlayer,
     DateTime? timestamp,
     List<List<int>>? currentBoard,
     int length = 8,
@@ -57,11 +49,12 @@ class RoomData extends ChangeNotifier with Savable {
     Duration blackTotalDuration = const Duration(),
     Duration whiteTotalDuration = const Duration(),
     bool whiteFirstTurn = false,
-  })  : this.length = currentBoard?[0].length ?? length,
+  })  : assert(blackPlayer.id != whitePlayer.id),
+        this.length = currentBoard?[0].length ?? length,
         this.height = currentBoard?.length ?? height,
         this._timestamp = timestamp ?? DateTime.now(),
         this._currentBoard = currentBoard ?? _initializeBoard(length, height),
-        this.__playerIdTurn = whiteFirstTurn ? whiteId : blackId,
+        this.__playerIdTurn = whiteFirstTurn ? whitePlayer.id : blackPlayer.id,
         this._lastMoves = lastMoves ?? [],
         this._chats = chats ?? [],
         this._blackTotalDuration = blackTotalDuration,
@@ -69,38 +62,96 @@ class RoomData extends ChangeNotifier with Savable {
     PieceState.whiteTurn = isWhiteTurn;
   }
 
-  factory RoomData.offlinePvPNewGame(int height, int length, bool resetGame,
-      [bool whiteFirstTurn = false]) {
+  factory RoomData.fromKey(String key,
+      {bool resetGame = false,
+      height = 8,
+      length = 8,
+      whiteFirstTurn = false}) {
+    switch (key) {
+      case hiveOfflinePvCKey:
+        return RoomData.offlinePvC(
+            height: height,
+            length: length,
+            whiteFirstTurn: whiteFirstTurn,
+            resetGame: resetGame);
+
+      default:
+        return RoomData.offlinePvP(
+          height: height,
+          length: length,
+          whiteFirstTurn: whiteFirstTurn,
+          resetGame: resetGame,
+        );
+    }
+  }
+
+  factory RoomData.offlinePvP(
+      {bool resetGame = false,
+      int height = 8,
+      int length = 8,
+      bool whiteFirstTurn = false}) {
     if (!resetGame) {
-      var box = Hive.box(hiveBoxName);
-      var _rawData = box.get(hiveOfflinePvPKey);
-      if (_rawData != null) {
-        var map = Map<String, dynamic>.from(_rawData);
-        return RoomData.fromMap(map);
-      }
+      var room = fromStorage(hiveOfflinePvPKey);
+      if (room != null) return room;
     }
 
     height = max(2, height);
     length = max(2, length);
     return RoomData._raw(
-      roomId: 'offlinePvP',
-      blackId: 'blackId',
-      whiteId: 'whiteId',
+      roomId: hiveOfflinePvPKey,
+      hiveKey: hiveOfflinePvPKey,
+      blackPlayer: Player(),
+      whitePlayer: Player(),
       whiteFirstTurn: whiteFirstTurn,
       height: height,
       length: length,
     );
   }
 
+  factory RoomData.offlinePvC(
+      {int height = 8,
+      int length = 8,
+      bool resetGame = false,
+      bool whiteFirstTurn = false,
+      bool mainPlayerIsWhite = false}) {
+    if (!resetGame) {
+      var room = fromStorage(hiveOfflinePvCKey);
+      if (room != null) return room;
+    }
+
+    Player computerPlayer = Player(nextMoveFnId: NextMoveFns.offlineTempId),
+        mainPlayer = Player();
+
+    return RoomData._raw(
+      roomId: hiveOfflinePvCKey,
+      hiveKey: hiveOfflinePvCKey,
+      blackPlayer: mainPlayerIsWhite ? computerPlayer : mainPlayer,
+      whitePlayer: mainPlayerIsWhite ? mainPlayer : computerPlayer,
+      whiteFirstTurn: whiteFirstTurn,
+      height: height,
+      length: length,
+    );
+  }
+
+  static RoomData? fromStorage(String hiveKey) {
+    var box = Hive.box(hiveBoxName);
+    var _rawData = box.get(hiveKey);
+    if (_rawData != null) {
+      var map = Map<String, dynamic>.from(_rawData);
+      return RoomData.fromMap(map);
+    }
+  }
+
   factory RoomData.fromMap(Map<String, dynamic> map) {
     String playerTurnId = map[RoomDataLabels.playerIdTurn];
-    String whiteId = map[RoomDataLabels.whiteId];
-    bool whiteTurn = playerTurnId == whiteId;
+    Player whitePlayer = Player.fromMap(map[RoomDataLabels.whitePlayer] ?? {});
+    bool whiteTurn = playerTurnId == whitePlayer.id;
 
     return RoomData._raw(
       roomId: map[RoomDataLabels.roomId],
-      blackId: map[RoomDataLabels.blackId],
-      whiteId: whiteId,
+      hiveKey: map[RoomDataLabels.hiveKey] ?? hiveOfflinePvPKey,
+      blackPlayer: Player.fromMap(map[RoomDataLabels.blackPlayer] ?? {}),
+      whitePlayer: whitePlayer,
       timestamp: map[RoomDataLabels.timestamp],
       currentBoard:
           map[RoomDataLabels.currentBoard]?.cast<List<int>>()?.toList(),
@@ -118,7 +169,9 @@ class RoomData extends ChangeNotifier with Savable {
 
   static const hiveBoxName = 'Rooms';
   static const hiveOfflinePvPKey = 'offlinePvP';
-  final String roomId, blackId, whiteId;
+  static const hiveOfflinePvCKey = 'offlinePvC';
+  final String roomId, hiveKey;
+  final Player blackPlayer, whitePlayer;
   final int height, length;
   String __playerIdTurn;
   List<List<int>> _currentBoard;
@@ -127,11 +180,15 @@ class RoomData extends ChangeNotifier with Savable {
   List<ChatMessage> _chats;
   DateTime _timestamp;
 
-  int get _currentPlayerMove => _playerMove(isWhiteTurn);
+  int get currentPlayerMove => _playerMove(isWhiteTurn);
 
   int _playerMove(bool whiteTurn) => whiteTurn ? 0 : 1;
 
-  bool get isWhiteTurn => _playerIdTurn == whiteId;
+  bool get isWhiteTurn => _playerIdTurn == whitePlayer.id;
+
+  bool get isManualTurn => _currentPlayer.nextMoveFnId == null;
+
+  Player get _currentPlayer => isWhiteTurn ? whitePlayer : blackPlayer;
 
   String get _playerIdTurn => __playerIdTurn;
 
@@ -159,10 +216,13 @@ class RoomData extends ChangeNotifier with Savable {
     return UnmodifiableListView(res);
   }
 
+  Future<List<int>?> get nextTurn => _currentPlayer.nextTurn(this);
+
   Map<String, dynamic> toMap() => {
         RoomDataLabels.roomId: roomId,
-        RoomDataLabels.blackId: blackId,
-        RoomDataLabels.whiteId: whiteId,
+        RoomDataLabels.hiveKey: hiveKey,
+        RoomDataLabels.blackPlayer: blackPlayer.toMap(),
+        RoomDataLabels.whitePlayer: whitePlayer.toMap(),
         RoomDataLabels.playerIdTurn: __playerIdTurn,
         RoomDataLabels.currentBoard: _currentBoard,
         RoomDataLabels.lastMoves: _lastMoves.toMaps(),
@@ -203,14 +263,15 @@ class RoomData extends ChangeNotifier with Savable {
     if (possibleMoves.length <= 0) _flipTurn();
   }
 
-  void _flipTurn() => _playerIdTurn = isWhiteTurn ? blackId : whiteId;
+  void _flipTurn() =>
+      _playerIdTurn = isWhiteTurn ? blackPlayer.id : whitePlayer.id;
 
   List<List<int>> getPossibleMovesList() {
     List<List<int>> res = [];
     for (int i = 0; i < height; i++) {
       for (int j = 0; j < length; j++) {
         if (_currentBoard[i][j] != -1) continue;
-        if (getPiecesToFlip(i, j, _currentPlayerMove).length > 0)
+        if (getPiecesToFlip(i, j, currentPlayerMove).length > 0)
           res.add([i, j]);
       }
     }
@@ -223,11 +284,12 @@ class RoomData extends ChangeNotifier with Savable {
     _timestamp = _timestamp.subtract(_lastMoves.last.duration);
     _lastMoves.removeLast();
     _saveGameOffline();
+    if (!isManualTurn) undo();
   }
 
   List<List<List<int>>?> makeMove(int i, int j) {
     _updateLastMoves();
-    _currentBoard[i][j] = _currentPlayerMove;
+    _currentBoard[i][j] = currentPlayerMove;
     var piecesToFlip = getPiecesToFlip(i, j, _currentBoard[i][j]);
     if (isWhiteTurn)
       _whiteTotalDuration += DateTime.now().difference(_timestamp);
@@ -242,7 +304,7 @@ class RoomData extends ChangeNotifier with Savable {
 
   void _saveGameOffline() async {
     var box = Hive.box(hiveBoxName);
-    await box.put(hiveOfflinePvPKey, toMap());
+    await box.put(hiveKey, toMap());
     print("successfully saved");
   }
 
