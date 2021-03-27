@@ -1,7 +1,7 @@
 import 'dart:collection';
 import 'dart:math';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'chat_message.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
@@ -415,31 +415,5 @@ class MoveData extends Savable {
         'board': board,
         'duration': duration.inSeconds,
         'playerIdTurn': playerIdTurn,
-      };
-}
-
-class ChatMessage extends Savable {
-  ChatMessage({
-    required this.msg,
-    required this.uid,
-    required this.timestamp,
-  });
-
-  static List<ChatMessage> fromMaps(List<Map> maps) =>
-      List.generate(maps.length, (i) => ChatMessage.fromMap(maps[i]));
-
-  ChatMessage.fromMap(Map map)
-      : this.msg = map['msg'],
-        this.uid = map['uid'],
-        this.timestamp = map['timestamp'];
-
-  final String msg;
-  final String uid;
-  final Timestamp timestamp;
-
-  Map<String, dynamic> toMap() => {
-        'msg': msg,
-        'uid': uid,
-        'timestamp': timestamp,
       };
 }
