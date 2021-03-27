@@ -1,6 +1,6 @@
 import 'dart:collection';
-
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:othello/components/common_alert_dialog.dart';
 import 'package:othello/components/flip_piece.dart';
@@ -32,7 +32,18 @@ class GameInfo {
       _roomData.currentBoard;
 
   void _initValues() {
-    _boardWidth = Globals.screenWidth - 50;
+    final margin = 50;
+    if (Globals.screenWidth < Globals.screenHeight) {
+      _boardWidth = Globals.screenWidth - margin;
+      final _hasEnoughHeight =
+          Globals.screenHeight > Globals.screenWidth * 1.5;
+      if (!_hasEnoughHeight) _boardWidth -= Globals.screenWidth * 0.2;
+    } else {
+      final appBarHeight = 100;
+      _boardWidth = Globals.screenHeight - margin - 100;
+      if (!kIsWeb) _boardWidth -= appBarHeight;
+    }
+
     cellWidth = _boardWidth / _roomData.length;
     for (int i = 0; i < _roomData.height; i++) {
       flipPieceStates.add([]);

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +10,6 @@ import 'package:othello/components/flip_piece.dart';
 import 'package:othello/components/piece.dart';
 import 'package:othello/objects/game_info.dart';
 import 'package:othello/objects/room_data.dart';
-import 'package:othello/utils/globals.dart';
 import 'package:provider/provider.dart';
 
 class GameRoom extends StatefulWidget {
@@ -76,24 +76,26 @@ class _GameRoomState extends State<GameRoom>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Othello Game"),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.replay),
-            onPressed: () {
-              Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => GameRoom(
-                      RoomData.fromKey(widget.roomData.hiveKey,
-                          resetGame: true),
-                    ),
-                  ));
-            },
-          )
-        ],
-      ),
+      appBar: !kIsWeb
+          ? AppBar(
+              title: Text("Othello Game"),
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.replay),
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => GameRoom(
+                            RoomData.fromKey(widget.roomData.hiveKey,
+                                resetGame: true),
+                          ),
+                        ));
+                  },
+                )
+              ],
+            )
+          : null,
       body: ChangeNotifierProvider<RoomData>(
         create: (context) => _gameInfo.roomData,
         child: Padding(
@@ -146,53 +148,58 @@ class ScoreBoard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: aboveBoard ? Alignment.bottomLeft : Alignment.topRight,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(height: 10),
-          Container(
-            color: Colors.brown.withAlpha(100),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image(
-                  image: AssetImage(
-                      'assets/${forWhite ? 'flip_0' : 'flip_1'}/frame_0.png'),
-                  width: Globals.screenWidth * 0.065,
-                ),
-                Icon(Icons.close_rounded),
-                Consumer<RoomData>(
-                  builder: (context, roomData, child) {
-                    return Text(
-                      roomData.totalPieces(forWhite: forWhite).toString(),
-                      style: TextStyle(
-                        fontSize: Globals.screenWidth * 0.055,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    );
-                  },
-                ),
-                SizedBox(width: Globals.screenWidth * 0.04),
-                Icon(Icons.access_time),
-                SizedBox(width: Globals.screenWidth * 0.02),
-                ChanceTimer(forWhite),
-              ],
+    return LayoutBuilder(builder: (context, constraints) {
+      double height =
+          min(constraints.maxHeight, constraints.maxWidth * 0.17) / 2;
+      return Align(
+        alignment: aboveBoard ? Alignment.bottomRight : Alignment.topLeft,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(height: 10),
+            Container(
+              color: Colors.brown.withAlpha(100),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image(
+                    image: AssetImage(
+                        'assets/${forWhite ? 'flip_0' : 'flip_1'}/frame_0.png'),
+                    width: height * 0.8,
+                  ),
+                  Icon(Icons.close_rounded),
+                  Consumer<RoomData>(
+                    builder: (context, roomData, child) {
+                      return Text(
+                        roomData.totalPieces(forWhite: forWhite).toString(),
+                        style: TextStyle(
+                          fontSize: height * 0.8,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      );
+                    },
+                  ),
+                  SizedBox(width: height * 0.3),
+                  Icon(Icons.access_time),
+                  SizedBox(width: height * 0.3),
+                  ChanceTimer(forWhite, height * 0.8),
+                ],
+              ),
             ),
-          ),
-          SizedBox(height: 10)
-        ],
-      ),
-    );
+            SizedBox(height: 10)
+          ],
+        ),
+      );
+    });
   }
 }
 
 class ChanceTimer extends StatefulWidget {
-  ChanceTimer(this.forWhite);
+  ChanceTimer(this.forWhite, this.fontSize);
 
   final bool forWhite;
+  final double fontSize;
 
   @override
   _ChanceTimerState createState() => _ChanceTimerState();
@@ -250,7 +257,7 @@ class _ChanceTimerState extends State<ChanceTimer> {
           ? DateFormat.ms().format(_time)
           : DateFormat.Hms().format(_time),
       style: GoogleFonts.montserrat(
-        fontSize: Globals.screenWidth * 0.055,
+        fontSize: widget.fontSize,
         fontWeight: FontWeight.w400,
       ),
     );
