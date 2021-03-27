@@ -13,7 +13,8 @@ import 'package:othello/objects/room_data.dart';
 import 'package:provider/provider.dart';
 
 class GameRoom extends StatefulWidget {
-  static const routeName = '/home-page';
+  static const offlinePvCRouteName = '/game_room/offline_pvc';
+  static const offlinePvPRouteName = '/game_room/offline_pvp';
 
   GameRoom(this.roomData);
 

@@ -13,24 +13,14 @@ class MainMenu extends StatelessWidget {
           children: [
             ElevatedButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => GameRoom.offlinePvC(),
-                  ),
-                );
+                Navigator.pushNamed(context, GameRoom.offlinePvCRouteName);
               },
               child: Text("vs Computer"),
             ),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => GameRoom.offlinePvP(),
-                  ),
-                );
+                Navigator.pushNamed(context, GameRoom.offlinePvPRouteName);
               },
               child: Text('pass n play'),
             ),

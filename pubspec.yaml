@@ -35,10 +35,17 @@ dependencies:
   firebase_core: ^1.0.1
   cloud_firestore: ^1.0.1
   firebase_auth: ^1.0.1
+
+  #internal_storage
   hive: ^2.0.0
   hive_flutter: ^1.0.0
+
+  #miscellaneous
   google_fonts: ^2.0.0
   intl: ^0.17.0
+
+  #dynamic url routing(for web deep links)
+  flutter_modular: ^3.0.2+1
 
   #google sign-in
   google_sign_in: ^5.0.0

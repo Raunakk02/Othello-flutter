@@ -1,13 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 import 'package:othello/providers/google_sign_in.dart';
 import 'package:othello/screens/signup_screen.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:othello/utils/app_module.dart';
 import 'package:othello/utils/globals.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:othello/utils/routes.dart';
 import 'package:provider/provider.dart';
 
 import 'screens/main_menu.dart';
@@ -20,7 +21,7 @@ void main() async {
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
-  runApp(MyApp());
+  runApp(ModularApp(module: AppModule(), child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -43,9 +44,7 @@ class MyApp extends StatelessWidget {
                     backgroundColor: Colors.brown,
                   ),
         ),
-        // home: MainPage(),
-        routes: appRoutes,
-      ),
+      ).modular(),
     );
   }
 }
