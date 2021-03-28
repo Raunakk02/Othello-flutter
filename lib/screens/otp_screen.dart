@@ -1,9 +1,14 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:othello/utils/globals.dart';
 import 'package:pinput/pin_put/pin_put.dart';
 
 class OtpScreen extends StatefulWidget {
   static const routeName = 'otp-screen';
+
+  OtpScreen(this.number);
+
+  final String number;
 
   @override
   _OtpScreenState createState() => _OtpScreenState();
@@ -12,56 +17,43 @@ class OtpScreen extends StatefulWidget {
 class _OtpScreenState extends State<OtpScreen> {
   final _pinPutController = TextEditingController();
   final _pinPutFocusNode = FocusNode();
+  final _formKey = GlobalKey<FormState>();
 
   var _isEnabled = true;
 
   late final _phone;
   late String _verificationCode;
 
-  var _isInit = true;
-
   Widget animatingBorders() {
     final BoxDecoration pinPutDecoration = BoxDecoration(
-      border: Border.all(color: Colors.greenAccent),
-      borderRadius: BorderRadius.circular(15.0),
+      color: Colors.white24,
+      borderRadius: BorderRadius.circular(Globals.maxScreenWidth * 0.02),
     );
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: PinPut(
-        enabled: _isEnabled,
-        fieldsCount: 6,
-        eachFieldHeight: 60.0,
-        withCursor: true,
-        focusNode: _pinPutFocusNode,
-        controller: _pinPutController,
-        submittedFieldDecoration: pinPutDecoration.copyWith(
-          borderRadius: BorderRadius.circular(30.0),
-        ),
-        selectedFieldDecoration: pinPutDecoration,
-        followingFieldDecoration: pinPutDecoration.copyWith(
-          borderRadius: BorderRadius.circular(10.0),
-          border: Border.all(
-            color: Colors.deepOrangeAccent,
+    return Form(
+      key: _formKey,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: PinPut(
+          enabled: _isEnabled,
+          fieldsCount: 6,
+          eachFieldHeight: Globals.maxScreenWidth * 0.12,
+          eachFieldWidth: Globals.maxScreenWidth * 0.08,
+          textStyle: Globals.primaryTextStyle,
+          withCursor: true,
+          focusNode: _pinPutFocusNode,
+          controller: _pinPutController,
+          submittedFieldDecoration: pinPutDecoration,
+          selectedFieldDecoration: pinPutDecoration,
+          followingFieldDecoration: pinPutDecoration.copyWith(
+            color: Colors.white12,
           ),
+          preFilledWidget: Text(''),
+          validator: (text) {
+            if (text == null || text.isEmpty) return "Please enter OTP";
+            final otp = double.tryParse(text);
+            if (otp == null || otp < 1e+5) return "Please enter valid OTP";
+          },
         ),
-        preFilledWidget: Text('-'),
-        // onSubmit: (pin) async {
-        //   try {
-        //     var userCreds = await FirebaseAuth.instance.signInWithCredential(
-        //       PhoneAuthProvider.credential(
-        //         verificationId: _verificationCode,
-        //         smsCode: pin,
-        //       ),
-        //     );
-        //     if (userCreds.user != null) {
-        //       print(userCreds.user!.phoneNumber);
-        //     }
-        //     Navigator.of(context).pushNamed(HomePage.routeName);
-        //   } catch (e) {
-        //     FocusScope.of(context).unfocus();
-        //     _showSnackBar('Invalid OTP');
-        //   }
-        // },
       ),
     );
   }
@@ -77,7 +69,7 @@ class _OtpScreenState extends State<OtpScreen> {
     });
 
     await auth.verifyPhoneNumber(
-      phoneNumber: '+$phone',
+      phoneNumber: phone,
       verificationCompleted: (creds) async {
         setState(() {
           _isEnabled = false;
@@ -87,12 +79,7 @@ class _OtpScreenState extends State<OtpScreen> {
         if (auth.currentUser != null) {
           print('Phone Auto auth success: ${userCreds.user!.phoneNumber} \n'
               'Loading Home Page');
-          FirebaseAuth.instance.currentUser!.reload();
-
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            '/',
-            (route) => false,
-          );
+          await FirebaseAuth.instance.currentUser!.reload();
         }
       },
       verificationFailed: (e) {
@@ -106,23 +93,14 @@ class _OtpScreenState extends State<OtpScreen> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    print('DCD');
-    if (_isInit) {
-      _phone = ModalRoute.of(context)?.settings.arguments as String;
-      verifyPhone(
-        phone: _phone,
-        codeSentCallback: codeSentFunc,
-        codeAutoRetrievalTimeoutCallback: codeAutoRetrievalTimeoutFunc,
-      );
-      _isInit = false;
-    }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
+  void initState() {
+    _phone = widget.number;
+    verifyPhone(
+      phone: _phone,
+      codeSentCallback: codeSentFunc,
+      codeAutoRetrievalTimeoutCallback: codeAutoRetrievalTimeoutFunc,
+    );
+    super.initState();
   }
 
   @override
@@ -131,8 +109,9 @@ class _OtpScreenState extends State<OtpScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
-        title: Text('Verify Phone'),
+        title: Text('Enter OTP'),
       ),
+      backgroundColor: Colors.black,
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -140,12 +119,10 @@ class _OtpScreenState extends State<OtpScreen> {
           SizedBox(
             height: 10,
           ),
-          OutlinedButton(
-            onPressed: _isEnabled
-                ? () async {
-                    setState(() {
-                      _isEnabled = false;
-                    });
+          _isEnabled
+              ? TextButton(
+                  onPressed: () async {
+                    if (_formKey.currentState?.validate() != true) return;
                     try {
                       var auth = FirebaseAuth.instance;
                       var userCreds = await auth.signInWithCredential(
@@ -158,12 +135,7 @@ class _OtpScreenState extends State<OtpScreen> {
                         print(
                             'Phone auth success: ${userCreds.user!.phoneNumber} \n'
                             'Loading Home Page');
-                        FirebaseAuth.instance.currentUser!.reload();
-
-                        Navigator.of(context).pushNamedAndRemoveUntil(
-                          '/',
-                          (route) => false,
-                        );
+                        await FirebaseAuth.instance.currentUser!.reload();
                       }
                     } catch (e) {
                       FocusScope.of(context).unfocus();
@@ -172,17 +144,14 @@ class _OtpScreenState extends State<OtpScreen> {
                         _isEnabled = true;
                       });
                     }
-                  }
-                : null,
-            child: _isEnabled
-                ? Text('Verify OTP')
-                : Container(
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      backgroundColor: Colors.green,
-                    ),
+                  },
+                  child: Text('Verify', style: Globals.primaryTextStyle),
+                )
+              : Container(
+                  child: CircularProgressIndicator(
+                    backgroundColor: Colors.green,
                   ),
-          ),
+                ),
         ],
       ),
     );

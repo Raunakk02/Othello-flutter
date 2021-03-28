@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:othello/components/side_drawer.dart';
 import 'package:othello/screens/game_room.dart';
 
+import 'online_rooms.dart';
+
 class MainMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -23,6 +25,12 @@ class MainMenu extends StatelessWidget {
                 Navigator.pushNamed(context, GameRoom.offlinePvPRouteName);
               },
               child: Text('pass n play'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, OnlineRooms.routeName);
+              },
+              child: Text('Online'),
             ),
           ],
         ),

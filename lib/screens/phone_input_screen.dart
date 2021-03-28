@@ -1,71 +1,67 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:othello/screens/otp_screen.dart';
+import 'package:othello/utils/globals.dart';
 
 class PhoneInputScreen extends StatefulWidget {
   static const routeName = '/phone-input-screen';
+
   @override
   _PhoneInputScreenState createState() => _PhoneInputScreenState();
 }
 
 class _PhoneInputScreenState extends State<PhoneInputScreen> {
   var phoneNumberController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        title: Text('SignUp With Phone'),
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
+      backgroundColor: Colors.black,
+      body: Form(
+        key: _formKey,
+        child: Center(
+          child: Container(
             margin: EdgeInsets.all(30),
-            child: TextField(
+            child: TextFormField(
               key: Key('phoneTextField'),
+              style: GoogleFonts.montserrat(fontSize: Globals.primaryFontSize),
+              textAlign: TextAlign.center,
               decoration: InputDecoration(
-                labelText: 'Enter phone number',
-                icon: FaIcon(
+                hintText: 'Enter phone number',
+                prefixIcon: Icon(
                   FontAwesomeIcons.phoneAlt,
                   color: Colors.green,
                 ),
-                labelStyle: TextStyle(
-                  color: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: Globals.borderRadius,
+                  borderSide: BorderSide.none,
                 ),
-                hintText: 'Eg:- 8888844444',
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey),
-                ),
-                focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.green),
-                ),
+                fillColor: Colors.white24,
+                filled: true,
               ),
               controller: phoneNumberController,
               keyboardType: TextInputType.number,
-              maxLength: 12,
+              maxLength: 10,
               maxLengthEnforcement: MaxLengthEnforcement.enforced,
+              onFieldSubmitted: (text) {
+                if (_formKey.currentState?.validate() != true) return;
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => OtpScreen('+91' + text),
+                ));
+              },
+              validator: (text) {
+                if (text == null || text.isEmpty)
+                  return "Please Enter Phone Number";
+                double? number = double.tryParse(text);
+                if (number == null || number < 1e+9)
+                  return "Please Enter Valid Number";
+              },
             ),
           ),
-          TextButton(
-            key: Key('confirmPhoneButton'),
-            onPressed: () {
-              if (phoneNumberController.text != '') {
-                Navigator.of(context).pushNamed(
-                  OtpScreen.routeName,
-                  arguments: '+91' + phoneNumberController.text.trim(),
-                );
-              }
-            },
-            child: Text('Submit'),
-            style: TextButton.styleFrom(
-              primary: Colors.green,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -1,7 +1,7 @@
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:othello/main.dart';
 import 'package:othello/screens/game_room.dart';
-import 'package:othello/screens/otp_screen.dart';
+import 'package:othello/screens/online_rooms.dart';
 import 'package:othello/screens/phone_input_screen.dart';
 import 'package:othello/screens/signup_screen.dart';
 
@@ -17,10 +17,10 @@ class AppModule extends Module {
     ChildRoute(SignUpScreen.routeName, child: (_, __) => SignUpScreen()),
     ChildRoute(PhoneInputScreen.routeName,
         child: (_, __) => PhoneInputScreen()),
-    ChildRoute(OtpScreen.routeName, child: (_, __) => OtpScreen()),
     ChildRoute(GameRoom.offlinePvCRouteName,
         child: (_, __) => GameRoom.offlinePvC()),
     ChildRoute(GameRoom.offlinePvPRouteName,
         child: (_, __) => GameRoom.offlinePvP()),
+    ChildRoute(OnlineRooms.routeName, child: (_, __) => OnlineRooms()),
   ];
 }
