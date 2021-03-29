@@ -23,10 +23,16 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
         key: _formKey,
         child: Center(
           child: Container(
+            constraints: BoxConstraints(
+              maxWidth: 400,
+            ),
             margin: EdgeInsets.all(30),
             child: TextFormField(
               key: Key('phoneTextField'),
-              style: GoogleFonts.montserrat(fontSize: Globals.primaryFontSize),
+              style: GoogleFonts.montserrat(
+                fontSize: Globals.primaryFontSize,
+                color: Colors.white,
+              ),
               textAlign: TextAlign.center,
               decoration: Globals.textFieldDecoration.copyWith(
                 hintText: 'Enter phone number',

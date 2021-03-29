@@ -48,6 +48,7 @@ class _MainMenuState extends State<MainMenu> {
               },
               child: Text('pass n play'),
             ),
+            SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
                 if (user == null)

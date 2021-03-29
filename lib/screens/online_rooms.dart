@@ -109,54 +109,58 @@ class RoomCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        customPopup(context).show(context);
-      },
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 10),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10.0),
+      child: InkWell(
+        onTap: () {
+          customPopup(context).show(context);
+        },
         child: Container(
-          key: _key,
-          decoration: BoxDecoration(
-            color: Colors.white24,
-            borderRadius: Globals.borderRadius,
-          ),
-          child: Container(
-            width: Globals.screenWidth * 0.9,
-            constraints: BoxConstraints(
-              maxWidth: 500,
-            ),
-            padding: const EdgeInsets.all(15),
-            child: Column(
-              children: [
-                DefaultTextStyle(
-                  style: GoogleFonts.montserrat(
-                    fontSize: Globals.secondaryFontSize,
-                  ),
-                  child: FutureBuilder<List<Profile>>(
-                    future: getProfiles(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting)
-                        return CircularProgressIndicator();
-                      final profiles = snapshot.data;
-                      if (profiles == null) return Text("No one in this room");
-                      if (profiles.length < 2)
-                        return Text("You are the only one in this room");
-                      return Text(
-                          "${profiles[0].name.capitalize()} vs ${profiles[1].name.capitalize()}");
-                    },
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.bottomRight,
-                  child: Text(
-                    DateFormat('dd-MM-yyyy').format(data.timestamp),
-                    style: TextStyle(
-                      color: Colors.white54,
+          child: Center(
+            child: Container(
+              key: _key,
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: Globals.borderRadius,
+              ),
+              width: Globals.maxScreenWidth * 0.9,
+              constraints: BoxConstraints(
+                maxWidth: 500,
+              ),
+              padding: const EdgeInsets.all(15),
+              child: Column(
+                children: [
+                  DefaultTextStyle(
+                    style: GoogleFonts.montserrat(
+                      fontSize: Globals.secondaryFontSize,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
+                    child: FutureBuilder<List<Profile>>(
+                      future: getProfiles(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting)
+                          return CircularProgressIndicator();
+                        final profiles = snapshot.data;
+                        if (profiles == null) return Text("No one in this room");
+                        if (profiles.length < 2)
+                          return Text("You are the only one in this room");
+                        return Text(
+                            "${profiles[0].name.capitalize()} vs ${profiles[1].name.capitalize()}");
+                      },
                     ),
                   ),
-                )
-              ],
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: Text(
+                      DateFormat('dd-MM-yyyy').format(data.timestamp),
+                      style: TextStyle(
+                        color: Colors.white54,
+                      ),
+                    ),
+                  )
+                ],
+              ),
             ),
           ),
         ),

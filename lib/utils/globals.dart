@@ -30,7 +30,7 @@ class Globals {
 
   static double get screenWidth => _mediaQueryData?.size.width ?? 500;
 
-  static double get maxScreenWidth => max(screenWidth, 600);
+  static double get maxScreenWidth => min(screenWidth, 600);
 
   static double get screenHeight => _mediaQueryData?.size.height ?? 1000;
 }

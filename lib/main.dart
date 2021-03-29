@@ -6,7 +6,6 @@ import 'package:othello/providers/google_sign_in.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:othello/utils/app_module.dart';
-import 'package:othello/utils/globals.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 
@@ -41,9 +40,7 @@ class MyApp extends StatelessWidget {
                 ThemeData.dark().floatingActionButtonTheme.copyWith(
                       backgroundColor: Colors.brown,
                     ),
-            textTheme: TextTheme(
-              headline1: Globals.primaryTextStyle,
-            )),
+            ),
       ).modular(),
     );
   }
