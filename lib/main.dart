@@ -36,6 +36,7 @@ class MyApp extends StatelessWidget {
         title: 'Othello Game',
         theme: ThemeData.dark().copyWith(
             primaryColor: Colors.brown,
+            scaffoldBackgroundColor: Colors.black,
             floatingActionButtonTheme:
                 ThemeData.dark().floatingActionButtonTheme.copyWith(
                       backgroundColor: Colors.brown,

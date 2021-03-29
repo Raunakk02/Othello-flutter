@@ -16,8 +16,8 @@ class Profile extends Savable {
         this._photoURL = user.photoURL;
 
   Profile.fromMap(Map<String, dynamic> map)
-      : assert(map['name'] == null),
-        assert(map['id'] == null),
+      : assert(map['name'] != null),
+        assert(map['id'] != null),
         this._name = map['name'],
         this.id = map['id'],
         this._photoURL = map['photoURL'],

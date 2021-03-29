@@ -4,6 +4,7 @@ import 'package:othello/components/side_drawer.dart';
 import 'package:othello/objects/profile.dart';
 import 'package:othello/screens/game_room.dart';
 import 'package:othello/screens/signup_screen.dart';
+import 'package:othello/utils/globals.dart';
 
 import 'online_rooms.dart';
 
@@ -27,6 +28,7 @@ class _MainMenuState extends State<MainMenu> {
 
   @override
   Widget build(BuildContext context) {
+    Globals.mediaQueryData = MediaQuery.of(context);
     return Scaffold(
       drawer: SideDrawer(),
       body: Center(

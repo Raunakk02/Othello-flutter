@@ -97,6 +97,7 @@ class _GameRoomState extends State<GameRoom>
               ],
             )
           : null,
+      backgroundColor: Colors.white12,
       body: ChangeNotifierProvider<RoomData>(
         create: (context) => _gameInfo.roomData,
         child: Padding(

@@ -13,6 +13,7 @@ class Globals {
     fontSize: Globals.primaryFontSize,
   );
   static final double primaryFontSize = Globals.maxScreenWidth * 0.035;
+  static final double secondaryFontSize = Globals.maxScreenWidth * 0.032;
   static final BorderRadius borderRadius =
       BorderRadius.circular((maxScreenWidth * 0.03));
   static final textFieldDecoration = InputDecoration(
@@ -31,5 +32,6 @@ class Globals {
 
   static double get maxScreenWidth => max(screenWidth, 600);
 
-  static double get screenHeight => _mediaQueryData?.size.height ?? 500;
+  static double get screenHeight => _mediaQueryData?.size.height ?? 1000;
 }
+
