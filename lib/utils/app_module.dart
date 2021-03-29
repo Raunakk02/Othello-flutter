@@ -1,6 +1,7 @@
 import 'package:flutter_modular/flutter_modular.dart';
-import 'package:othello/main.dart';
+import 'package:othello/screens/enter_name.dart';
 import 'package:othello/screens/game_room.dart';
+import 'package:othello/screens/main_menu.dart';
 import 'package:othello/screens/online_rooms.dart';
 import 'package:othello/screens/phone_input_screen.dart';
 import 'package:othello/screens/signup_screen.dart';
@@ -13,7 +14,7 @@ class AppModule extends Module {
   // Provide all the routes for your module
   @override
   final List<ModularRoute> routes = [
-    ChildRoute('/', child: (_, __) => MainPage()),
+    ChildRoute('/', child: (_, __) => MainMenu()),
     ChildRoute(SignUpScreen.routeName, child: (_, __) => SignUpScreen()),
     ChildRoute(PhoneInputScreen.routeName,
         child: (_, __) => PhoneInputScreen()),
@@ -22,5 +23,6 @@ class AppModule extends Module {
     ChildRoute(GameRoom.offlinePvPRouteName,
         child: (_, __) => GameRoom.offlinePvP()),
     ChildRoute(OnlineRooms.routeName, child: (_, __) => OnlineRooms()),
+    ChildRoute(EnterName.routeName, child: (_, __) => EnterName()),
   ];
 }

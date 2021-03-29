@@ -29,18 +29,12 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
               key: Key('phoneTextField'),
               style: GoogleFonts.montserrat(fontSize: Globals.primaryFontSize),
               textAlign: TextAlign.center,
-              decoration: InputDecoration(
+              decoration: Globals.textFieldDecoration.copyWith(
                 hintText: 'Enter phone number',
                 prefixIcon: Icon(
                   FontAwesomeIcons.phoneAlt,
                   color: Colors.green,
                 ),
-                border: OutlineInputBorder(
-                  borderRadius: Globals.borderRadius,
-                  borderSide: BorderSide.none,
-                ),
-                fillColor: Colors.white24,
-                filled: true,
               ),
               controller: phoneNumberController,
               keyboardType: TextInputType.number,
