@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 class CommonAlertDialog extends AlertDialog {
@@ -12,7 +14,7 @@ class CommonAlertDialog extends AlertDialog {
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
+    double screenWidth = min(MediaQuery.of(context).size.width, 600);
     return AlertDialog(
       elevation: 10,
       shape: RoundedRectangleBorder(

@@ -19,28 +19,27 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       body: Form(
         key: _formKey,
         child: Center(
           child: Container(
+            constraints: BoxConstraints(
+              maxWidth: 400,
+            ),
             margin: EdgeInsets.all(30),
             child: TextFormField(
               key: Key('phoneTextField'),
-              style: GoogleFonts.montserrat(fontSize: Globals.primaryFontSize),
+              style: GoogleFonts.montserrat(
+                fontSize: Globals.primaryFontSize,
+                color: Colors.white,
+              ),
               textAlign: TextAlign.center,
-              decoration: InputDecoration(
+              decoration: Globals.textFieldDecoration.copyWith(
                 hintText: 'Enter phone number',
                 prefixIcon: Icon(
                   FontAwesomeIcons.phoneAlt,
                   color: Colors.green,
                 ),
-                border: OutlineInputBorder(
-                  borderRadius: Globals.borderRadius,
-                  borderSide: BorderSide.none,
-                ),
-                fillColor: Colors.white24,
-                filled: true,
               ),
               controller: phoneNumberController,
               keyboardType: TextInputType.number,

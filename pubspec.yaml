@@ -34,7 +34,12 @@ dependencies:
   #firebase essentials
   firebase_core: ^1.0.1
   cloud_firestore: ^1.0.1
+  cloud_functions: ^1.0.2
   firebase_auth: ^1.0.1
+  firebase_dynamic_links: ^2.0.0-dev.0
+
+  #share dynamic links
+  share: ^2.0.1
 
   #internal_storage
   hive: ^2.0.0

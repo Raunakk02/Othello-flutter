@@ -72,6 +72,10 @@ class _GameRoomState extends State<GameRoom>
             getPieceStateFn: () => _gameInfo.pieceStates[i][j]!,
           ),
         );
+
+    WidgetsBinding.instance!.addPostFrameCallback((_) async {
+      await _gameInfo.makeNextTurn(false);
+    });
   }
 
   @override
@@ -97,6 +101,7 @@ class _GameRoomState extends State<GameRoom>
               ],
             )
           : null,
+      backgroundColor: Colors.white12,
       body: ChangeNotifierProvider<RoomData>(
         create: (context) => _gameInfo.roomData,
         child: Padding(

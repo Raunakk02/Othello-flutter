@@ -1,49 +1,52 @@
-import 'dart:math';
-
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:othello/components/common_alert_dialog.dart';
+import 'package:othello/components/custom_pop_up_menu.dart';
 import 'package:othello/components/future_dialog.dart';
 import 'package:othello/extensions/string_extensions.dart';
 import 'package:flutter/material.dart';
-import 'package:othello/components/loading_screen.dart';
 import 'package:othello/components/side_drawer.dart';
 import 'package:othello/objects/online_room_meta_data.dart';
 import 'package:othello/objects/profile.dart';
 import 'package:othello/utils/globals.dart';
 import 'package:othello/utils/networks.dart';
+import 'package:share/share.dart';
 
 class OnlineRooms extends StatelessWidget {
   static const routeName = '/online_rooms';
 
   @override
   Widget build(BuildContext context) {
-    return LoadingScreen<List<OnlineRoomMetaData>>(
-        future: Networks.getRoomMetaData(context),
-        func: (data) {
-          return DefaultTextStyle(
-            style: TextStyle(
-              fontFamily: 'montserrat',
-            ),
-            child: Scaffold(
-              appBar: AppBar(
-                title: Text("All Rooms"),
-                actions: [
-                  IconButton(
-                    icon: Icon(Icons.add),
-                    onPressed: () {
-                      showDialog(
-                          context: context,
-                          builder: (context) => FutureDialog<void>(
-                                future: Networks.createNewRoom(context),
-                                hasData: (_) => CommonAlertDialog(
-                                    "Successfully Created Room"),
-                              ));
-                    },
-                  )
-                ],
-              ),
-              drawer: SideDrawer(),
-              body: data != null && data.length != 0
+    return Scaffold(
+        appBar: AppBar(
+          title: Text("All Rooms"),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.add),
+              onPressed: () async {
+                await showDialog(
+                    context: context,
+                    builder: (context) => FutureDialog<void>(
+                          future: Networks.createNewRoom(context),
+                          hasData: (_) =>
+                              CommonAlertDialog("Successfully Created Room"),
+                        ));
+              },
+            )
+          ],
+        ),
+        drawer: SideDrawer(),
+        body: Padding(
+          padding: const EdgeInsets.all(15),
+          child: StreamBuilder<List<OnlineRoomMetaData>>(
+            stream: Networks.getRoomsMetaData(context),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting)
+                return Center(child: CircularProgressIndicator());
+              final data = snapshot.data;
+
+              return data != null && data.length != 0
                   ? ListView.builder(
                       itemCount: data.length,
                       itemBuilder: (context, i) {
@@ -51,64 +54,157 @@ class OnlineRooms extends StatelessWidget {
                       },
                     )
                   : Center(
-                    child: Text(
+                      child: Text(
                         "No Rooms Currently Available",
                       ),
-                  ),
-            ),
-          );
-        });
+                    );
+            },
+          ),
+        ));
   }
 }
 
 class RoomCard extends StatelessWidget {
-  const RoomCard(
+  RoomCard(
     this.data, {
     Key? key,
   }) : super(key: key);
 
   final OnlineRoomMetaData data;
+  final _popupKey = GlobalKey<CustomPopupState>();
+  final _key = LabeledGlobalKey('room_card');
+
+  CustomPopup deletePopup(BuildContext context) => CustomPopup(
+        key: _popupKey,
+        child: InkWell(
+          onTap: () async {
+            _popupKey.currentState!.remove();
+            if (data.id != null)
+              await showDialog(
+                context: context,
+                builder: (context) => FutureDialog<void>(
+                  future: Networks.deleteRoom(data.id!),
+                  hasData: (_) =>
+                      CommonAlertDialog("Successfully deleted room"),
+                ),
+              );
+          },
+          child: Container(
+            margin: const EdgeInsets.only(top: 2),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 30),
+            decoration: BoxDecoration(
+              color: Color(0xFF333333),
+              borderRadius: BorderRadius.circular(Globals.maxScreenWidth * 0.1),
+            ),
+            child: Text(
+              'Delete',
+              style: GoogleFonts.montserrat(
+                color: Colors.red,
+                fontSize: Globals.maxScreenWidth * 0.035,
+              ),
+            ),
+          ),
+        ),
+        showBarrierColor: true,
+        parentKey: _key,
+      );
+
+  Future<Uri> getSharableDynamicLink() async {
+    final parameters = DynamicLinkParameters(
+        uriPrefix: Globals.URI_PREFIX,
+        link: Uri.parse(
+            Globals.BASE_LINK + "${OnlineRooms.routeName}/${data.id}"),
+        androidParameters: AndroidParameters(
+          packageName: 'com.vishnuworld.othello',
+        ),
+        socialMetaTagParameters: SocialMetaTagParameters(
+          title: "Invitation to Othello Room",
+          description:
+              "Let's play othello, I would like you to join my othello room",
+          imageUrl: Uri.parse(Globals.ICON_URL),
+        ));
+
+    return (await parameters.buildShortLink()).shortUrl;
+  }
 
   @override
   Widget build(BuildContext context) {
-    double borderRadius = max(Globals.screenWidth, 700) * 0.1;
-    return Card(
-      elevation: 2,
-      color: Colors.white24,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(borderRadius),
-      ),
-      child: Container(
-        width: Globals.screenWidth * 0.9,
-        constraints: BoxConstraints(
-          maxWidth: 500,
-        ),
-        padding: const EdgeInsets.all(15),
-        child: Column(
-          children: [
-            FutureBuilder<List<Profile>>(
-              future: getProfiles(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting)
-                  return CircularProgressIndicator();
-                final profiles = snapshot.data;
-                if (profiles == null) return Text("No one in this room");
-                if (profiles.length < 2)
-                  return Text("You are the only one in this room");
-                return Text(
-                    "${profiles[0].name.capitalize()} vs ${profiles[1].name.capitalize()}");
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10.0),
+      child: InkWell(
+        onLongPress: () {
+          deletePopup(context).show(context);
+        },
+        onTap: () async {
+          if (data.players.length >= 2) {
+            Navigator.popAndPushNamed(
+                context, '${OnlineRooms.routeName}/${data.id}');
+            return;
+          }
+          Uri? sharableLink = await showDialog<Uri>(
+            context: context,
+            builder: (context) => FutureDialog<Uri>(
+              future: getSharableDynamicLink(),
+              hasData: (link) {
+                WidgetsBinding.instance!.addPostFrameCallback((_) {
+                  Navigator.pop(context, link);
+                });
+                if (link != null) return CommonAlertDialog("Got the Link");
+                return CommonAlertDialog("Cannot share room", error: true);
               },
             ),
-            Align(
-              alignment: Alignment.bottomRight,
-              child: Text(
-                DateFormat.yMd().format(data.timestamp),
-                style: TextStyle(
-                  color: Colors.white54,
-                ),
+          );
+          if (sharableLink != null) Share.share(sharableLink.toString());
+        },
+        child: Container(
+          child: Center(
+            child: Container(
+              key: _key,
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: Globals.borderRadius,
               ),
-            )
-          ],
+              width: Globals.maxScreenWidth * 0.9,
+              constraints: BoxConstraints(
+                maxWidth: 500,
+              ),
+              padding: const EdgeInsets.all(15),
+              child: Column(
+                children: [
+                  DefaultTextStyle(
+                    style: GoogleFonts.montserrat(
+                      fontSize: Globals.secondaryFontSize,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
+                    child: FutureBuilder<List<Profile>>(
+                      future: getProfiles(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting)
+                          return CircularProgressIndicator();
+                        final profiles = snapshot.data;
+                        if (profiles == null)
+                          return Text("No one in this room");
+                        if (profiles.length < 2)
+                          return Text("You are the only one in this room");
+                        return Text(
+                            "${profiles[0].name.capitalize()} vs ${profiles[1].name.capitalize()}");
+                      },
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: Text(
+                      DateFormat('dd-MM-yyyy').format(data.timestamp),
+                      style: TextStyle(
+                        color: Colors.white54,
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

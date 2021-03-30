@@ -42,3 +42,4 @@ app.*.map.json
 
 # Local Netlify folder
 .netlify
+node_modules
