@@ -54,6 +54,7 @@ class GameInfo {
   }
 
   void undo() {
+    if (_roomData.isOnline) return;
     _roomData.undo();
     if (!_flipping) _syncEachPiece();
 
@@ -128,7 +129,11 @@ class GameInfo {
     }
     await Future.delayed(Duration(milliseconds: 400));
     _syncEachPiece();
+    makeNextTurn(gameEnded);
     _flipping = false;
+  }
+
+  Future<void> makeNextTurn(bool gameEnded) async {
     if (!_roomData.isManualTurn && !gameEnded) {
       var nextMove = await _roomData.nextTurn;
       print("is not manual turn, next moves: $nextMove");

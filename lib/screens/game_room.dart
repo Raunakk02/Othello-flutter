@@ -72,6 +72,10 @@ class _GameRoomState extends State<GameRoom>
             getPieceStateFn: () => _gameInfo.pieceStates[i][j]!,
           ),
         );
+
+    WidgetsBinding.instance!.addPostFrameCallback((_) async {
+      await _gameInfo.makeNextTurn(false);
+    });
   }
 
   @override

@@ -1,3 +1,4 @@
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:othello/components/common_alert_dialog.dart';
@@ -10,6 +11,7 @@ import 'package:othello/objects/online_room_meta_data.dart';
 import 'package:othello/objects/profile.dart';
 import 'package:othello/utils/globals.dart';
 import 'package:othello/utils/networks.dart';
+import 'package:share/share.dart';
 
 class OnlineRooms extends StatelessWidget {
   static const routeName = '/online_rooms';
@@ -38,7 +40,7 @@ class OnlineRooms extends StatelessWidget {
         body: Padding(
           padding: const EdgeInsets.all(15),
           child: StreamBuilder<List<OnlineRoomMetaData>>(
-            stream: Networks.getRoomMetaData(context),
+            stream: Networks.getRoomsMetaData(context),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting)
                 return Center(child: CircularProgressIndicator());
@@ -72,7 +74,7 @@ class RoomCard extends StatelessWidget {
   final _popupKey = GlobalKey<CustomPopupState>();
   final _key = LabeledGlobalKey('room_card');
 
-  CustomPopup customPopup(BuildContext context) => CustomPopup(
+  CustomPopup deletePopup(BuildContext context) => CustomPopup(
         key: _popupKey,
         child: InkWell(
           onTap: () async {
@@ -107,13 +109,52 @@ class RoomCard extends StatelessWidget {
         parentKey: _key,
       );
 
+  Future<Uri> getSharableDynamicLink() async {
+    final parameters = DynamicLinkParameters(
+        uriPrefix: Globals.URI_PREFIX,
+        link: Uri.parse(
+            Globals.BASE_LINK + "${OnlineRooms.routeName}/${data.id}"),
+        androidParameters: AndroidParameters(
+          packageName: 'com.vishnuworld.othello',
+        ),
+        socialMetaTagParameters: SocialMetaTagParameters(
+          title: "Invitation to Othello Room",
+          description:
+              "Let's play othello, I would like you to join my othello room",
+          imageUrl: Uri.parse(Globals.ICON_URL),
+        ));
+
+    return (await parameters.buildShortLink()).shortUrl;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10.0),
       child: InkWell(
-        onTap: () {
-          customPopup(context).show(context);
+        onLongPress: () {
+          deletePopup(context).show(context);
+        },
+        onTap: () async {
+          if (data.players.length >= 2) {
+            Navigator.popAndPushNamed(
+                context, '${OnlineRooms.routeName}/${data.id}');
+            return;
+          }
+          Uri? sharableLink = await showDialog<Uri>(
+            context: context,
+            builder: (context) => FutureDialog<Uri>(
+              future: getSharableDynamicLink(),
+              hasData: (link) {
+                WidgetsBinding.instance!.addPostFrameCallback((_) {
+                  Navigator.pop(context, link);
+                });
+                if (link != null) return CommonAlertDialog("Got the Link");
+                return CommonAlertDialog("Cannot share room", error: true);
+              },
+            ),
+          );
+          if (sharableLink != null) Share.share(sharableLink.toString());
         },
         child: Container(
           child: Center(
@@ -142,7 +183,8 @@ class RoomCard extends StatelessWidget {
                         if (snapshot.connectionState == ConnectionState.waiting)
                           return CircularProgressIndicator();
                         final profiles = snapshot.data;
-                        if (profiles == null) return Text("No one in this room");
+                        if (profiles == null)
+                          return Text("No one in this room");
                         if (profiles.length < 2)
                           return Text("You are the only one in this room");
                         return Text(

@@ -1,4 +1,5 @@
 import 'package:flutter_modular/flutter_modular.dart';
+import 'package:othello/screens/enter_room.dart';
 import 'package:othello/screens/enter_name.dart';
 import 'package:othello/screens/game_room.dart';
 import 'package:othello/screens/main_menu.dart';
@@ -24,5 +25,7 @@ class AppModule extends Module {
         child: (_, __) => GameRoom.offlinePvP()),
     ChildRoute(OnlineRooms.routeName, child: (_, __) => OnlineRooms()),
     ChildRoute(EnterName.routeName, child: (_, __) => EnterName()),
+    ChildRoute(OnlineRooms.routeName + '/:id',
+        child: (_, args) => EnterRoom(args.params['id'])),
   ];
 }

@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/material.dart';
 import 'package:othello/components/side_drawer.dart';
 import 'package:othello/objects/profile.dart';
@@ -23,7 +24,33 @@ class _MainMenuState extends State<MainMenu> {
       Navigator.popUntil(context, ModalRoute.withName('/'));
       await Profile.setProfile(context, user);
     });
+    initDynamicLinks();
     super.initState();
+  }
+
+  void initDynamicLinks() async {
+    FirebaseDynamicLinks.instance.onLink(
+        onSuccess: (dynamicLink) async {
+          print("got link");
+          final deepLink = dynamicLink?.link;
+
+          if (deepLink != null) {
+            Navigator.popUntil(context, ModalRoute.withName('/'));
+            Navigator.pushNamed(context, deepLink.path);
+          }
+        },
+        onError: (OnLinkErrorException e) async {
+          print('onLinkError');
+          print(e.message);
+        }
+    );
+
+    final data = await FirebaseDynamicLinks.instance.getInitialLink();
+    final deepLink = data?.link;
+
+    if (deepLink != null) {
+      Navigator.pushNamed(context, deepLink.path);
+    }
   }
 
   @override
