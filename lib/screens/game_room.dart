@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 class GameRoom extends StatefulWidget {
   static const offlinePvCRouteName = '/game_room/offline_pvc';
   static const offlinePvPRouteName = '/game_room/offline_pvp';
+  static const fromKeyRouteName = '/game_room/from_key';
 
   GameRoom(this.roomData);
 
@@ -23,6 +24,9 @@ class GameRoom extends StatefulWidget {
 
   GameRoom.offlinePvC({bool resetGame = false})
       : this.roomData = RoomData.offlinePvC(resetGame: resetGame);
+
+  GameRoom.fromKey(String key)
+      : this.roomData = RoomData.fromKey(key, resetGame: true);
 
   final RoomData roomData;
 
@@ -88,14 +92,10 @@ class _GameRoomState extends State<GameRoom>
                 IconButton(
                   icon: Icon(Icons.replay),
                   onPressed: () {
-                    Navigator.pushReplacement(
+                    Navigator.pushNamedAndRemoveUntil(
                         context,
-                        MaterialPageRoute(
-                          builder: (context) => GameRoom(
-                            RoomData.fromKey(widget.roomData.hiveKey,
-                                resetGame: true),
-                          ),
-                        ));
+                        '${GameRoom.fromKeyRouteName}/${_gameInfo.roomData.hiveKey}',
+                        ModalRoute.withName('/'));
                   },
                 )
               ],

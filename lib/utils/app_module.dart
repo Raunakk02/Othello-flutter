@@ -23,6 +23,10 @@ class AppModule extends Module {
         child: (_, __) => GameRoom.offlinePvC()),
     ChildRoute(GameRoom.offlinePvPRouteName,
         child: (_, __) => GameRoom.offlinePvP()),
+    ChildRoute(GameRoom.fromKeyRouteName + "/:key", child: (_, args) {
+      final key = args.params['key'];
+      return GameRoom.fromKey(key);
+    }),
     ChildRoute(OnlineRooms.routeName, child: (_, __) => OnlineRooms()),
     ChildRoute(EnterName.routeName, child: (_, __) => EnterName()),
     ChildRoute(OnlineRooms.routeName + '/:id',

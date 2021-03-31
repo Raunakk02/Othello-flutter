@@ -1,6 +1,4 @@
-import 'package:othello/objects/profile.dart';
-import 'package:othello/objects/room_data.dart';
-import 'package:othello/utils/networks.dart';
+part of 'room_data.dart';
 
 abstract class NextMoveFns {
   static String offlineTempId = 'offlineTemp';

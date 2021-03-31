@@ -1,4 +1,3 @@
-import 'next_move_fns.dart';
 import 'savable.dart';
 import 'package:othello/utils/globals.dart';
 import 'room_data.dart';

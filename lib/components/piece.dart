@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:othello/objects/room_data.dart';
+import 'package:provider/provider.dart';
 
 class Piece extends StatefulWidget {
   Piece(this.cellWidth, {this.onCreation, this.initValue = -1, this.onTap});
@@ -29,8 +31,6 @@ class PieceState extends State<Piece> {
 
   int get value => _value;
 
-  static bool whiteTurn = false;
-
   @override
   void initState() {
     (widget.onCreation ?? (_) {})(this);
@@ -52,17 +52,20 @@ class PieceState extends State<Piece> {
   @override
   Widget build(BuildContext context) {
     Widget child = Container();
-    if (possibleMove && value == -1)
+
+    if (possibleMove && value == -1) {
+      final _roomData = Provider.of<RoomData>(context, listen: false);
       child = Center(
         child: Container(
           width: widget.cellWidth / 2,
           height: widget.cellWidth / 2,
           decoration: BoxDecoration(
-            color: whiteTurn ? Colors.white54 : Colors.black54,
+            color: _roomData.isWhiteTurn ? Colors.white54 : Colors.black54,
             borderRadius: BorderRadius.circular(50),
           ),
         ),
       );
+    }
     if (_value == 0)
       child = FittedBox(
         fit: BoxFit.cover,

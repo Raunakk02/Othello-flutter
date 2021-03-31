@@ -5,7 +5,6 @@ import 'package:othello/objects/online_room_meta_data.dart';
 import 'package:othello/objects/profile.dart';
 import 'package:othello/objects/room_data.dart';
 import 'package:othello/providers/google_sign_in.dart';
-import 'package:othello/utils/globals.dart';
 import 'package:provider/provider.dart';
 
 abstract class Networks {
@@ -123,7 +122,7 @@ abstract class Networks {
 
     batch.update(_rooms.doc('${roomData.id}$_roomDataPath'), roomDataUpdate);
 
-    batch.set(_rooms.doc('${roomData.id}$_lastMovesPath/${Globals.uuid.v1()}'),
+    batch.set(_rooms.doc('${roomData.id}$_lastMovesPath/${roomData.lastMoves.last.id}'),
         roomData.lastMoves.last.toMap());
 
     await batch.commit();

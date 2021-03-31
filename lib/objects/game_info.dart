@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:developer';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -35,8 +36,7 @@ class GameInfo {
     final margin = 50;
     if (Globals.screenWidth < Globals.screenHeight) {
       _boardWidth = Globals.screenWidth - margin;
-      final _hasEnoughHeight =
-          Globals.screenHeight > Globals.screenWidth * 1.5;
+      final _hasEnoughHeight = Globals.screenHeight > Globals.screenWidth * 1.5;
       if (!_hasEnoughHeight) _boardWidth -= Globals.screenWidth * 0.2;
     } else {
       final appBarHeight = 100;
@@ -53,23 +53,25 @@ class GameInfo {
     }
   }
 
-  void undo() {
+  void undo({bool debug = false}) {
     if (_roomData.isOnline) return;
-    _roomData.undo();
-    if (!_flipping) _syncEachPiece();
+    if (debug) print("performing undo");
+    _roomData.undo(debug: debug);
+    if (!_flipping) _syncEachPiece(false, debug);
 
     WidgetsBinding.instance!.addPostFrameCallback((_) {
+      if (debug) print("marking possible moves");
       _markPossibleMovesOrEndGame();
+      _roomData.lastMovesStats(debug);
     });
   }
 
-  Function(PieceState state) onTapOnPiece(int i, int j,
-          [bool moveFromBot = false]) =>
-      (state) async {
-        if (!moveFromBot && !_roomData.isManualTurn) return;
+  Future<void> Function(PieceState state) onTapOnPiece(int i, int j,
+      [bool moveFromBot = false, bool debug = false]) =>
+          (state) async {
         state.set(_roomData.currentPlayerMove);
         var piecesToFlip = _roomData.makeMove(i, j);
-        await _startFlipAnimation(piecesToFlip);
+        await _startFlipAnimation(piecesToFlip, debug);
       };
 
   ///If there is a possibility of End Game do not left context null.
@@ -108,7 +110,8 @@ class GameInfo {
       }
     }
     for (var possibleMove in possibleMoves) {
-      int i = possibleMove[0], j = possibleMove[1];
+      int i = possibleMove[0],
+          j = possibleMove[1];
       pieceStates[i][j]!.possibleMove = true;
       pieceStates[i][j]?.stateFn(operate: false);
       havePossibleMove = true;
@@ -116,7 +119,7 @@ class GameInfo {
     return havePossibleMove;
   }
 
-  Future<void> _startFlipAnimation(List<List<List<int>>?> piecesToFlip) async {
+  Future<void> _startFlipAnimation(List<List<List<int>>?> piecesToFlip, bool debug) async {
     bool gameEnded = _markPossibleMovesOrEndGame(context: _context);
     if (_flipping) return;
     _flipping = true;
@@ -128,24 +131,27 @@ class GameInfo {
       await Future.delayed(Duration(milliseconds: 100));
     }
     await Future.delayed(Duration(milliseconds: 400));
-    _syncEachPiece();
-    makeNextTurn(gameEnded);
+    _syncEachPiece(gameEnded, debug);
     _flipping = false;
   }
 
-  Future<void> makeNextTurn(bool gameEnded) async {
-    if (!_roomData.isManualTurn && !gameEnded) {
-      var nextMove = await _roomData.nextTurn;
-      print("is not manual turn, next moves: $nextMove");
-      if (nextMove == null || nextMove.length < 2) return;
-      onTapOnPiece(nextMove[0], nextMove[1], true)(
-          pieceStates[nextMove[0]][nextMove[1]]!);
-    }
-  }
-
-  void _syncEachPiece() {
+  void _syncEachPiece(bool gameEnded, bool debug) {
     for (int i = 0; i < _roomData.height; i++)
       for (int j = 0; j < _roomData.length; j++)
         pieceStates[i][j]?.set(board[i][j]);
+    makeNextTurn(gameEnded, debug: debug);
+  }
+
+  Future<void> makeNextTurn(bool gameEnded, {bool debug = false}) async {
+    if (debug) log("whiteTurn: ${_roomData.isWhiteTurn}, manualTurn: ${_roomData
+        .isManualTurn}, gameEnded: $gameEnded", name: "makeNextTurn");
+    if (!_roomData.isManualTurn && !gameEnded) {
+      var nextMove = await _roomData.nextTurn;
+      print("is not manual turn, next move: $nextMove");
+      if (nextMove != null && nextMove.length >= 2) {
+        await onTapOnPiece(nextMove[0], nextMove[1], true, debug)(
+            pieceStates[nextMove[0]][nextMove[1]]!);
+      }
+    }
   }
 }

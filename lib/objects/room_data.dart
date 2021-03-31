@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'dart:math';
+import 'dart:developer' as dev;
 
 import 'package:othello/objects/profile.dart';
 import 'package:othello/utils/networks.dart';
@@ -8,10 +9,11 @@ import 'chat_message.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:othello/components/piece.dart';
-import 'next_move_fns.dart';
+import 'move_data.dart';
 import 'player.dart';
 import 'savable.dart';
+
+part 'next_move_fns.dart';
 
 extension boardExtensions on List<List<int>> {
   List<List<int>> get clone {
@@ -32,15 +34,19 @@ extension boardExtensions on List<List<int>> {
   }
 }
 
-List<List<int>> fromFlatList(List<int> flat, int width, int height) {
-  List<List<int>> res = [];
+UnmodifiableListView<UnmodifiableListView<int>> fromFlatList(
+    List<int> flat, int width, int height) {
+  List<UnmodifiableListView<int>> res = [];
   for (int i = 0; i < flat.length; i++) {
-    if (i % width == 0)
-      res.add([flat[i]]);
-    else
-      res.last.add(flat[i]);
+    List<int> temp = [];
+    if ((i + 1) % width == 0) {
+      res.add(UnmodifiableListView(temp));
+      temp.clear();
+      temp.add(flat[i]);
+    } else
+      temp.add(flat[i]);
   }
-  return res;
+  return UnmodifiableListView(res);
 }
 
 abstract class RoomDataLabels {
@@ -86,7 +92,9 @@ class RoomData extends ChangeNotifier with Savable {
         this._chats = chats ?? [],
         this._blackTotalDuration = blackTotalDuration,
         this._whiteTotalDuration = whiteTotalDuration {
-    PieceState.whiteTurn = isWhiteTurn;
+    this._playerIdTurn =
+        this.__playerIdTurn; //To call set method for playerIdTurn
+    _updateLastMoves();
   }
 
   factory RoomData.fromKey(String key,
@@ -227,7 +235,10 @@ class RoomData extends ChangeNotifier with Savable {
 
   int get currentPlayerMove => _playerMove(isWhiteTurn);
 
-  int _playerMove(bool whiteTurn) => whiteTurn ? 0 : 1;
+  static int _playerMove(bool whiteTurn) => whiteTurn ? 0 : 1;
+
+  String playerId(bool isWhiteTurn) =>
+      isWhiteTurn ? whitePlayer.id : blackPlayer.id;
 
   bool get isWhiteTurn => _playerIdTurn == whitePlayer.id;
 
@@ -242,7 +253,6 @@ class RoomData extends ChangeNotifier with Savable {
 
   set _playerIdTurn(String str) {
     __playerIdTurn = str;
-    PieceState.whiteTurn = isWhiteTurn;
     notifyListeners();
   }
 
@@ -266,13 +276,20 @@ class RoomData extends ChangeNotifier with Savable {
   }
 
   UnmodifiableListView<UnmodifiableListView<int>> get currentBoard {
+    final clone = _currentBoard.clone;
     List<UnmodifiableListView<int>> res = [];
     for (int i = 0; i < height; i++)
-      res.add(UnmodifiableListView(_currentBoard[i]));
+      res.add(UnmodifiableListView(clone[i]));
     return UnmodifiableListView(res);
   }
 
   Future<List<int>?> get nextTurn => _currentPlayer.nextTurn(this);
+
+  void _subtractDuration(String playerIdTurn, Duration duration) {
+    if (playerIdTurn == whitePlayer.id)
+      _whiteTotalDuration -= duration;
+    else if (playerIdTurn == blackPlayer.id) _blackTotalDuration -= duration;
+  }
 
   Map<String, dynamic> toMap() => {
         RoomDataLabels.roomId: id,
@@ -283,7 +300,7 @@ class RoomData extends ChangeNotifier with Savable {
         RoomDataLabels.whitePlayer: whitePlayer.toMap(),
         RoomDataLabels.playerIdTurn: __playerIdTurn,
         RoomDataLabels.currentBoard: _currentBoard.flat,
-        RoomDataLabels.lastMoves: _lastMoves.toMaps(),
+        RoomDataLabels.lastMoves: lastMoves.toMaps(),
         RoomDataLabels.blackTotalDuration: _blackTotalDuration.inSeconds,
         RoomDataLabels.whiteTotalDuration: _whiteTotalDuration.inSeconds,
         RoomDataLabels.chats: _chats.toMaps(),
@@ -336,17 +353,21 @@ class RoomData extends ChangeNotifier with Savable {
     return res;
   }
 
-  void undo() {
-    _currentBoard = _lastMoves.last.board;
-    _playerIdTurn = _lastMoves.last.playerIdTurn;
-    _timestamp = _timestamp.subtract(_lastMoves.last.duration);
+  void undo({bool debug = false}) {
+    if (lastMoves.length < 2) return;
     _lastMoves.removeLast();
+    _currentBoard = lastMoves.last.board.clone;
+    _playerIdTurn = lastMoves.last.playerIdTurn;
+    _subtractDuration(playerId(!isWhiteTurn), lastMoves.last.duration);
+    _timestamp = lastMoves.last.timestamp;
+    if (!isManualTurn) return undo();
     _saveGameOffline();
     _updateGameOnlineIfRequired();
-    if (!isManualTurn) undo();
+    lastMovesStats(debug);
   }
 
-  List<List<List<int>>?> makeMove(int i, int j) {
+  List<List<List<int>>?> makeMove(int i, int j, {bool debug = false}) {
+    lastMovesStats(debug);
     _currentBoard[i][j] = currentPlayerMove;
     var piecesToFlip = getPiecesToFlip(i, j, _currentBoard[i][j]);
     if (isWhiteTurn)
@@ -354,9 +375,9 @@ class RoomData extends ChangeNotifier with Savable {
     else
       _blackTotalDuration += DateTime.now().difference(_timestamp);
     _flipPieces(piecesToFlip);
-    _updateLastMoves();
-    changeTurn();
     _timestamp = DateTime.now();
+    changeTurn();
+    _updateLastMoves();
     _saveGameOffline();
     _updateGameOnlineIfRequired();
     return piecesToFlip;
@@ -375,13 +396,22 @@ class RoomData extends ChangeNotifier with Savable {
     await Networks.updateRoom(this);
   }
 
-  void _updateLastMoves() {
+  void _updateLastMoves({bool debug = false}) {
+    if (debug) dev.log('isWhiteTurn: $isWhiteTurn', name: '_updateLastMoves');
     final currentMove = MoveData(
-        board: _currentBoard.clone,
+        board: currentBoard,
         duration: DateTime.now().difference(_timestamp),
         playerIdTurn: _playerIdTurn,
         timestamp: _timestamp);
     _lastMoves.add(currentMove);
+    lastMovesStats(debug);
+  }
+
+  void lastMovesStats(bool debug) {
+    if (!debug) return;
+    dev.log(
+        'lastMove.length: ${lastMoves.length} lastMoves: ${lastMoves.print()}',
+        name: "lastMovesStatus");
   }
 
   ///-1 for tie
@@ -458,36 +488,4 @@ class RoomData extends ChangeNotifier with Savable {
           _currentBoard[i][j] = 1 - _currentBoard[i][j];
         }
   }
-}
-
-class MoveData extends Savable {
-  MoveData({
-    required this.board,
-    required this.duration,
-    required this.playerIdTurn,
-    required this.timestamp,
-  });
-
-  MoveData.fromMap(Map map, int width, int height)
-      : this.board =
-            fromFlatList(map['board'].cast<int>().toList(), width, height),
-        this.duration = Duration(seconds: map['duration']),
-        this.playerIdTurn = map['playerIdTurn'],
-        this.timestamp = map['timestamp'];
-
-  static List<MoveData> fromMaps(List<Map> maps, int width, int height) =>
-      List.generate(
-          maps.length, (i) => MoveData.fromMap(maps[i], width, height));
-
-  final List<List<int>> board;
-  final Duration duration;
-  final DateTime timestamp;
-  final String playerIdTurn;
-
-  Map<String, dynamic> toMap() => {
-        'board': board.flat,
-        'duration': duration.inSeconds,
-        'playerIdTurn': playerIdTurn,
-        'timestamp': timestamp,
-      };
 }
