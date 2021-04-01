@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:othello/utils/globals.dart';
 import 'package:pinput/pin_put/pin_put.dart';
@@ -67,6 +68,15 @@ class _OtpScreenState extends State<OtpScreen> {
     setState(() {
       _isEnabled = false;
     });
+
+    if (kIsWeb) {
+      final credentials = await auth.signInWithPhoneNumber(phone);
+      setState(() {
+        _isEnabled = true;
+        _verificationCode = credentials.verificationId;
+      });
+      return;
+    }
 
     await auth.verifyPhoneNumber(
       phoneNumber: phone,
