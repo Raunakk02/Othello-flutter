@@ -1,4 +1,3 @@
-import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:othello/components/common_alert_dialog.dart';
@@ -11,7 +10,8 @@ import 'package:othello/objects/online_room_meta_data.dart';
 import 'package:othello/objects/profile.dart';
 import 'package:othello/utils/globals.dart';
 import 'package:othello/utils/networks.dart';
-import 'package:share/share.dart';
+import 'package:othello/utils/make_dynamic_link.dart'
+    if (dart.library.html) 'package:othello/utils/show_dynamic_link_dialog.dart';
 
 class OnlineRooms extends StatelessWidget {
   static const routeName = '/online_rooms';
@@ -109,24 +109,6 @@ class RoomCard extends StatelessWidget {
         parentKey: _key,
       );
 
-  Future<Uri> getSharableDynamicLink() async {
-    final parameters = DynamicLinkParameters(
-        uriPrefix: Globals.URI_PREFIX,
-        link: Uri.parse(
-            Globals.BASE_LINK + "${OnlineRooms.routeName}/${data.id}"),
-        androidParameters: AndroidParameters(
-          packageName: 'com.vishnuworld.othello',
-        ),
-        socialMetaTagParameters: SocialMetaTagParameters(
-          title: "Invitation to Othello Room",
-          description:
-              "Let's play othello, I would like you to join my othello room",
-          imageUrl: Uri.parse(Globals.ICON_URL),
-        ));
-
-    return (await parameters.buildShortLink()).shortUrl;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -141,20 +123,7 @@ class RoomCard extends StatelessWidget {
                 context, '${OnlineRooms.routeName}/${data.id}');
             return;
           }
-          Uri? sharableLink = await showDialog<Uri>(
-            context: context,
-            builder: (context) => FutureDialog<Uri>(
-              future: getSharableDynamicLink(),
-              hasData: (link) {
-                WidgetsBinding.instance!.addPostFrameCallback((_) {
-                  Navigator.pop(context, link);
-                });
-                if (link != null) return CommonAlertDialog("Got the Link");
-                return CommonAlertDialog("Cannot share room", error: true);
-              },
-            ),
-          );
-          if (sharableLink != null) Share.share(sharableLink.toString());
+          if (data.id != null) await shareDynamicLink(context, data.id!);
         },
         child: Container(
           child: Center(

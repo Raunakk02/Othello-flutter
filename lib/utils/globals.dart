@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -31,11 +32,16 @@ class Globals {
 
   // UI Related finals
 
-  static set mediaQueryData(MediaQueryData data) => _mediaQueryData = data;
+  static setMediaQueryData(BuildContext context) =>
+      _mediaQueryData = MediaQuery.of(context);
 
-  static double get screenWidth => _mediaQueryData?.size.width ?? 500;
+  static double get screenWidth =>
+      _mediaQueryData?.size.width ??
+      (window.physicalSize.width / window.devicePixelRatio);
 
   static double get maxScreenWidth => min(screenWidth, 600);
 
-  static double get screenHeight => _mediaQueryData?.size.height ?? 1000;
+  static double get screenHeight =>
+      _mediaQueryData?.size.height ??
+      (window.physicalSize.height / window.devicePixelRatio);
 }

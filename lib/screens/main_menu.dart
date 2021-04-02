@@ -55,7 +55,7 @@ class _MainMenuState extends State<MainMenu> {
 
   @override
   Widget build(BuildContext context) {
-    Globals.mediaQueryData = MediaQuery.of(context);
+    Globals.setMediaQueryData(context);
     return Scaffold(
       drawer: SideDrawer(),
       body: Center(

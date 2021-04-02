@@ -15,6 +15,14 @@ import 'savable.dart';
 
 part 'next_move_fns.dart';
 
+extension ExtensionList<int> on List<int> {
+  List<int> get clone {
+    List<int> res = [];
+    for (int elem in this) res.add(elem);
+    return res;
+  }
+}
+
 extension boardExtensions on List<List<int>> {
   List<List<int>> get clone {
     List<List<int>> res = [];
@@ -34,19 +42,33 @@ extension boardExtensions on List<List<int>> {
   }
 }
 
-UnmodifiableListView<UnmodifiableListView<int>> fromFlatList(
-    List<int> flat, int width, int height) {
+UnmodifiableListView<UnmodifiableListView<int>> unmodifiableFromFlatList(
+    List<int> flat, int width) {
   List<UnmodifiableListView<int>> res = [];
+  List<int> temp = [];
   for (int i = 0; i < flat.length; i++) {
-    List<int> temp = [];
     if ((i + 1) % width == 0) {
-      res.add(UnmodifiableListView(temp));
-      temp.clear();
       temp.add(flat[i]);
+      res.add(UnmodifiableListView(temp.clone));
+      temp.clear();
     } else
       temp.add(flat[i]);
   }
   return UnmodifiableListView(res);
+}
+
+List<List<int>> fromFlatList(List<int> flat, int width) {
+  List<List<int>> res = [];
+  List<int> temp = [];
+  for (int i = 0; i < flat.length; i++) {
+    if ((i + 1) % width == 0) {
+      temp.add(flat[i]);
+      res.add(temp.clone);
+      temp.clear();
+    } else
+      temp.add(flat[i]);
+  }
+  return res;
 }
 
 abstract class RoomDataLabels {
@@ -184,10 +206,10 @@ class RoomData extends ChangeNotifier with Savable {
     DateTime timestamp;
     int length = map[RoomDataLabels.length] ?? 8,
         height = map[RoomDataLabels.height] ?? 8;
-    List<List<int>>? currentBoard = fromFlatList(
-        map[RoomDataLabels.currentBoard]?.cast<int>()?.toList() ?? [],
-        length,
-        height);
+    List<int>? flatBoard =
+        map[RoomDataLabels.currentBoard]?.cast<int>()?.toList();
+
+    List<List<int>>? currentBoard = fromFlatList(flatBoard ?? [], length);
 
     if (currentBoard.length == 0) currentBoard = null;
 
@@ -278,8 +300,7 @@ class RoomData extends ChangeNotifier with Savable {
   UnmodifiableListView<UnmodifiableListView<int>> get currentBoard {
     final clone = _currentBoard.clone;
     List<UnmodifiableListView<int>> res = [];
-    for (int i = 0; i < height; i++)
-      res.add(UnmodifiableListView(clone[i]));
+    for (int i = 0; i < height; i++) res.add(UnmodifiableListView(clone[i]));
     return UnmodifiableListView(res);
   }
 

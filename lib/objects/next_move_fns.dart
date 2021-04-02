@@ -22,11 +22,10 @@ abstract class NextMoveFns {
 
       final data = snapshot.data()!;
 
-      List<List<int>> currentBoard = fromFlatList(
+      List<List<int>> currentBoard = unmodifiableFromFlatList(
           data[RoomDataLabels.currentBoard]?.cast<int>()?.toList() ??
               RoomData.initializeBoard(roomData.length, roomData.height).flat,
-          roomData.length,
-          roomData.height);
+          roomData.length);
       final move = _getMove(roomData.currentBoard, currentBoard);
       if (move == null) continue;
       return move;

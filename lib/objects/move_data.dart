@@ -14,7 +14,7 @@ class MoveData extends Savable {
 
   MoveData.fromMap(Map map, int width, int height)
       : this.board =
-            fromFlatList(map['board'].cast<int>().toList(), width, height),
+            unmodifiableFromFlatList(map['board'].cast<int>().toList(), width),
         this.duration = Duration(seconds: map['duration']),
         this.playerIdTurn = map['playerIdTurn'],
         this.timestamp = map['timestamp'],

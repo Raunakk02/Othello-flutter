@@ -47,6 +47,7 @@ class _GameRoomState extends State<GameRoom>
   }
 
   void _initStack() {
+
     mainStack = [
       Column(
         children: List.generate(
@@ -82,6 +83,13 @@ class _GameRoomState extends State<GameRoom>
     });
   }
 
+  void resetGame() {
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '${GameRoom.fromKeyRouteName}/${_gameInfo.roomData.hiveKey}',
+      ModalRoute.withName('/'));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,16 +100,13 @@ class _GameRoomState extends State<GameRoom>
                 IconButton(
                   icon: Icon(Icons.replay),
                   onPressed: () {
-                    Navigator.pushNamedAndRemoveUntil(
-                        context,
-                        '${GameRoom.fromKeyRouteName}/${_gameInfo.roomData.hiveKey}',
-                        ModalRoute.withName('/'));
+                    resetGame();
                   },
                 )
               ],
             )
           : null,
-      backgroundColor: Colors.white12,
+      backgroundColor: Colors.grey[850],
       body: ChangeNotifierProvider<RoomData>(
         create: (context) => _gameInfo.roomData,
         child: Padding(
@@ -134,9 +139,27 @@ class _GameRoomState extends State<GameRoom>
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.undo),
-        onPressed: _gameInfo.undo,
+      floatingActionButton: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton(
+            heroTag: "undo_button",
+            child: Icon(Icons.undo),
+            onPressed: _gameInfo.undo,
+          ),
+          if (kIsWeb)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(width: 10),
+                FloatingActionButton(
+                  heroTag: "reset_tag",
+                  onPressed: resetGame,
+                  child: Icon(Icons.replay),
+                ),
+              ],
+            ),
+        ],
       ),
     );
   }
