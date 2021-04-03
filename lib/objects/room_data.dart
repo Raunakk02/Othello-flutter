@@ -16,7 +16,7 @@ import 'savable.dart';
 part 'next_move_fns.dart';
 
 extension ExtensionList<int> on List<int> {
-  List<int> get clone {
+  List<int> get shallowClone {
     List<int> res = [];
     for (int elem in this) res.add(elem);
     return res;
@@ -24,7 +24,7 @@ extension ExtensionList<int> on List<int> {
 }
 
 extension boardExtensions on List<List<int>> {
-  List<List<int>> get clone {
+  List<List<int>> get deepClone {
     List<List<int>> res = [];
     for (int i = 0; i < this.length; i++) {
       res.add([]);
@@ -49,7 +49,7 @@ UnmodifiableListView<UnmodifiableListView<int>> unmodifiableFromFlatList(
   for (int i = 0; i < flat.length; i++) {
     if ((i + 1) % width == 0) {
       temp.add(flat[i]);
-      res.add(UnmodifiableListView(temp.clone));
+      res.add(UnmodifiableListView(temp.shallowClone));
       temp.clear();
     } else
       temp.add(flat[i]);
@@ -63,7 +63,7 @@ List<List<int>> fromFlatList(List<int> flat, int width) {
   for (int i = 0; i < flat.length; i++) {
     if ((i + 1) % width == 0) {
       temp.add(flat[i]);
-      res.add(temp.clone);
+      res.add(temp.shallowClone);
       temp.clear();
     } else
       temp.add(flat[i]);
@@ -298,7 +298,7 @@ class RoomData extends ChangeNotifier with Savable {
   }
 
   UnmodifiableListView<UnmodifiableListView<int>> get currentBoard {
-    final clone = _currentBoard.clone;
+    final clone = _currentBoard.deepClone;
     List<UnmodifiableListView<int>> res = [];
     for (int i = 0; i < height; i++) res.add(UnmodifiableListView(clone[i]));
     return UnmodifiableListView(res);
@@ -377,7 +377,7 @@ class RoomData extends ChangeNotifier with Savable {
   void undo({bool debug = false}) {
     if (lastMoves.length < 2) return;
     _lastMoves.removeLast();
-    _currentBoard = lastMoves.last.board.clone;
+    _currentBoard = lastMoves.last.board.deepClone;
     _playerIdTurn = lastMoves.last.playerIdTurn;
     _subtractDuration(playerId(!isWhiteTurn), lastMoves.last.duration);
     _timestamp = lastMoves.last.timestamp;
