@@ -8,7 +8,7 @@ import 'package:uuid/uuid.dart';
 class Globals {
   static Uuid uuid = Uuid();
   static const URI_PREFIX = "https://othellogame.page.link";
-  static const BASE_LINK = "https://othello-league.netlify.app";
+  static const BASE_LINK = "https://othello-league.netlify.app/#";
   static const ICON_URL =
       "https://github.com/vishnuagbly/Othello/blob/master/icon.png?raw=true";
 

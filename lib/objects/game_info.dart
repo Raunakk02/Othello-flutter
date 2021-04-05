@@ -67,9 +67,10 @@ class GameInfo {
   }
 
   Future<void> Function(PieceState state) onTapOnPiece(int i, int j,
-      [bool moveFromBot = false, bool debug = false]) =>
-          (state) async {
-        state.set(_roomData.currentPlayerMove);
+          [bool moveFromBot = false, bool debug = false]) =>
+      (state) async {
+        if (!moveFromBot && !_roomData.isManualTurn) return;
+        if (state.mounted) state.set(_roomData.currentPlayerMove);
         var piecesToFlip = _roomData.makeMove(i, j);
         await _startFlipAnimation(piecesToFlip, debug);
       };
@@ -110,8 +111,7 @@ class GameInfo {
       }
     }
     for (var possibleMove in possibleMoves) {
-      int i = possibleMove[0],
-          j = possibleMove[1];
+      int i = possibleMove[0], j = possibleMove[1];
       pieceStates[i][j]!.possibleMove = true;
       pieceStates[i][j]?.stateFn(operate: false);
       havePossibleMove = true;
@@ -119,7 +119,8 @@ class GameInfo {
     return havePossibleMove;
   }
 
-  Future<void> _startFlipAnimation(List<List<List<int>>?> piecesToFlip, bool debug) async {
+  Future<void> _startFlipAnimation(
+      List<List<List<int>>?> piecesToFlip, bool debug) async {
     bool gameEnded = _markPossibleMovesOrEndGame(context: _context);
     if (_flipping) return;
     _flipping = true;
@@ -143,8 +144,9 @@ class GameInfo {
   }
 
   Future<void> makeNextTurn(bool gameEnded, {bool debug = false}) async {
-    if (debug) log("whiteTurn: ${_roomData.isWhiteTurn}, manualTurn: ${_roomData
-        .isManualTurn}, gameEnded: $gameEnded", name: "makeNextTurn");
+    if (debug)
+      log("whiteTurn: ${_roomData.isWhiteTurn}, manualTurn: ${_roomData.isManualTurn}, gameEnded: $gameEnded",
+          name: "makeNextTurn");
     if (!_roomData.isManualTurn && !gameEnded) {
       var nextMove = await _roomData.nextTurn;
       print("is not manual turn, next move: $nextMove");

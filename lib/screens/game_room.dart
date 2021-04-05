@@ -60,7 +60,7 @@ class _GameRoomState extends State<GameRoom>
                             initValue: _gameInfo.board[i][j],
                             onCreation: (state) =>
                                 _gameInfo.pieceStates[i][j] = state,
-                            onTap: _gameInfo.onTapOnPiece(i, j),
+                            onTap: _gameInfo.onTapOnPiece(i, j, false, true),
                           )),
                 )),
       ),

@@ -29,21 +29,18 @@ class _MainMenuState extends State<MainMenu> {
   }
 
   void initDynamicLinks() async {
-    FirebaseDynamicLinks.instance.onLink(
-        onSuccess: (dynamicLink) async {
-          print("got link");
-          final deepLink = dynamicLink?.link;
+    FirebaseDynamicLinks.instance.onLink(onSuccess: (dynamicLink) async {
+      final deepLink = dynamicLink?.link;
+      print("got link: $deepLink");
 
-          if (deepLink != null) {
-            Navigator.popUntil(context, ModalRoute.withName('/'));
-            Navigator.pushNamed(context, deepLink.path);
-          }
-        },
-        onError: (OnLinkErrorException e) async {
-          print('onLinkError');
-          print(e.message);
-        }
-    );
+      if (deepLink != null) {
+        Navigator.popUntil(context, ModalRoute.withName('/'));
+        Navigator.pushNamed(context, deepLink.fragment);
+      }
+    }, onError: (OnLinkErrorException e) async {
+      print('onLinkError');
+      print(e.message);
+    });
 
     final data = await FirebaseDynamicLinks.instance.getInitialLink();
     final deepLink = data?.link;
