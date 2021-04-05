@@ -18,14 +18,14 @@ class BooleanDialog extends StatelessWidget {
         ),
       ),
       actions: [
-        FlatButton(
+        TextButton(
           child: Text("YES"),
           onPressed: () => Navigator.pop(
             context,
             true,
           ),
         ),
-        FlatButton(
+        TextButton(
           child: Text("NO"),
           onPressed: () => Navigator.pop(
             context,

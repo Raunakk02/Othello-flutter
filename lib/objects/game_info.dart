@@ -1,100 +1,93 @@
-import 'dart:math';
-
+import 'dart:collection';
+import 'dart:developer';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:othello/components/common_alert_dialog.dart';
 import 'package:othello/components/flip_piece.dart';
 import 'package:othello/components/piece.dart';
+import 'package:othello/objects/room_data.dart';
 import 'package:othello/utils/globals.dart';
 
-extension on List<List<int>> {
-  List<List<int>> get clone {
-    List<List<int>> res = [];
-    for (int i = 0; i < this.length; i++) {
-      res.add([]);
-      for (int j = 0; j < this[i].length; j++) res[i].add(this[i][j]);
-    }
-    return res;
-  }
-}
-
 class GameInfo {
-  GameInfo(int boardHeight, int boardLength)
-      : this.boardHeight = max(2, boardHeight),
-        this.boardLength = max(2, boardLength) {
+  GameInfo(this._roomData, this._context) {
     _initValues();
-    _initBoard();
+    WidgetsBinding.instance!.addPostFrameCallback((_) => _markPossibleMoves());
   }
 
-  final int boardHeight, boardLength;
-  double _boardWidth;
-  double cellWidth;
-  List<List<List<int>>> _board = [[]];
-  List<List<FlipPieceState>> flipPieceStates = [];
-  List<List<PieceState>> pieceStates = [];
+  final BuildContext _context;
+  late double _boardWidth;
+  late double cellWidth;
+  RoomData _roomData;
+  List<List<FlipPieceState?>> flipPieceStates = [];
+  List<List<PieceState?>> pieceStates = [];
+  bool _flipping = false;
 
-  List<List<int>> get board => _board.last;
+  int get boardHeight => _roomData.height;
+
+  int get boardLength => _roomData.length;
+
+  RoomData get roomData => _roomData;
+
+  UnmodifiableListView<UnmodifiableListView<int>> get board =>
+      _roomData.currentBoard;
 
   void _initValues() {
-    _boardWidth = Globals.screenWidth - 50;
-    cellWidth = _boardWidth / boardLength;
-    flipPieceStates.length = boardHeight;
-    pieceStates.length = boardHeight;
-    for (int i = 0; i < boardHeight; i++) {
-      flipPieceStates[i] = [];
-      flipPieceStates[i].length = boardLength;
-      pieceStates[i] = [];
-      pieceStates[i].length = boardLength;
-      board.add([]);
-      for (int j = 0; j < boardLength; j++) board[i].add(-1);
+    final margin = 50;
+    if (Globals.screenWidth < Globals.screenHeight) {
+      _boardWidth = Globals.screenWidth - margin;
+      final _hasEnoughHeight = Globals.screenHeight > Globals.screenWidth * 1.5;
+      if (!_hasEnoughHeight) _boardWidth -= Globals.screenWidth * 0.2;
+    } else {
+      final appBarHeight = 100;
+      _boardWidth = Globals.screenHeight - margin - 100;
+      if (!kIsWeb) _boardWidth -= appBarHeight;
+    }
+
+    cellWidth = _boardWidth / _roomData.length;
+    for (int i = 0; i < _roomData.height; i++) {
+      flipPieceStates.add([]);
+      flipPieceStates[i].length = _roomData.length;
+      pieceStates.add([]);
+      pieceStates[i].length = _roomData.length;
     }
   }
 
-  void _initBoard() {
-    int lMidFirst = boardLength ~/ 2 - 1,
-        lMidSecond = boardLength ~/ 2,
-        hMidFirst = boardHeight ~/ 2 - 1,
-        hMidSecond = boardHeight ~/ 2;
-    board[hMidFirst][lMidFirst] = 0;
-    board[hMidSecond][lMidSecond] = 0;
-    board[hMidFirst][lMidSecond] = 1;
-    board[hMidSecond][lMidFirst] = 1;
+  void undo({bool debug = false}) {
+    if (_roomData.isOnline) return;
+    if (debug) print("performing undo");
+    _roomData.undo(debug: debug);
+    if (!_flipping) _syncEachPiece(false, debug);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => _markPossibleMoves());
+    WidgetsBinding.instance!.addPostFrameCallback((_) {
+      if (debug) print("marking possible moves");
+      _markPossibleMovesOrEndGame();
+      _roomData.lastMovesStats(debug);
+    });
   }
 
-  void undo() {
-    if (_board.length <= 1) return;
-    _board.removeLast();
-
-    PieceState.whiteTurn = !PieceState.whiteTurn;
-
-    for (int i = 0; i < boardHeight; i++)
-      for (int j = 0; j < boardLength; j++) pieceStates[i][j].set(board[i][j]);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) => _markPossibleMoves());
-  }
-
-  Function(PieceState state) onTapOnPiece(int i, int j, BuildContext context) =>
+  Future<void> Function(PieceState state) onTapOnPiece(int i, int j,
+          [bool moveFromBot = false, bool debug = false]) =>
       (state) async {
-        _board.add(board.clone);
-        board[i][j] = state.boardValue;
-        var piecesToFlip = _getPiecesToFlip(i, j, board[i][j]);
-        _flipPieces(piecesToFlip);
-        _markPossibleMovesOrEndGame(context);
-        await _startFlipAnimation(piecesToFlip);
+        if (!moveFromBot && !_roomData.isManualTurn) return;
+        if (state.mounted) state.set(_roomData.currentPlayerMove);
+        var piecesToFlip = _roomData.makeMove(i, j);
+        await _startFlipAnimation(piecesToFlip, debug);
       };
 
-  void _markPossibleMovesOrEndGame(BuildContext context) {
-    if (!_markPossibleMoves()) {
-      PieceState.whiteTurn = !PieceState.whiteTurn;
-      if (!_markPossibleMoves()) _endGame(context);
+  ///If there is a possibility of End Game do not left context null.
+  ///
+  /// If game end return true.
+  bool _markPossibleMovesOrEndGame({BuildContext? context}) {
+    if (!_markPossibleMoves() && context != null) {
+      _endGame(context);
+      return true;
     }
+    return false;
   }
 
   void _endGame(BuildContext context) {
-    final _totalPieces = getTotalPieces();
-    final _status = _getStatus(_totalPieces);
+    final _status = _roomData.getStatus();
     showDialog(
         context: context,
         builder: (context) {
@@ -106,107 +99,61 @@ class GameInfo {
         });
   }
 
-  List<int> getTotalPieces() {
-    List<int> res = [0, 0, 0];
-    for (int i = 0; i < board.length; i++) {
-      for (int j = 0; j < board[i].length; j++) {
-        if (board[i][j] == 0)
-          res[0]++;
-        else if (board[i][j] == 1)
-          res[1]++;
-        else
-          res[2]++;
+  bool _markPossibleMoves() {
+    var possibleMoves = _roomData.getPossibleMovesList();
+    bool havePossibleMove = false;
+    for (int i = 0; i < boardHeight; i++) {
+      for (int j = 0; j < boardLength; j++) {
+        if (pieceStates[i][j]?.possibleMove ?? true) {
+          pieceStates[i][j]!.possibleMove = false;
+          pieceStates[i][j]?.stateFn(operate: false);
+        }
       }
     }
-    return res;
-  }
-
-  ///-1 for tie
-  ///0 for White win
-  ///1 for black win
-  int _getStatus(List<int> totalPieces) {
-    assert(totalPieces.length == 3);
-    if (totalPieces[0] == totalPieces[1]) return -1;
-    return totalPieces[0] > totalPieces[1] ? 0 : 1;
-  }
-
-  void _flipPieces(List<List<List<int>>> piecesToFlip) {
-    for (var levelPieces in piecesToFlip)
-      for (var pair in levelPieces) {
-        int i = pair.first, j = pair.last;
-        board[i][j] = 1 - board[i][j];
-      }
-  }
-
-  bool _markPossibleMoves({bool whiteTurn}) {
-    int value = whiteTurn ?? PieceState.whiteTurn ? 0 : 1;
-    bool havePossibleMove = false;
-    for (int i = 0; i < boardHeight; i++)
-      for (int j = 0; j < boardLength; j++) {
-        if (board[i][j] != -1) continue;
-        bool setThisCellState = false;
-        if (pieceStates[i][j].possibleMove) {
-          pieceStates[i][j].possibleMove = false;
-          setThisCellState = true;
-        }
-        if (_getPiecesToFlip(i, j, value).length > 0) {
-          pieceStates[i][j].possibleMove = true;
-          setThisCellState = true;
-          havePossibleMove = true;
-        }
-        if (setThisCellState) pieceStates[i][j].stateFn(operate: false);
-      }
+    for (var possibleMove in possibleMoves) {
+      int i = possibleMove[0], j = possibleMove[1];
+      pieceStates[i][j]!.possibleMove = true;
+      pieceStates[i][j]?.stateFn(operate: false);
+      havePossibleMove = true;
+    }
     return havePossibleMove;
   }
 
-  Future<void> _startFlipAnimation(List<List<List<int>>> piecesToFlip) async {
+  Future<void> _startFlipAnimation(
+      List<List<List<int>>?> piecesToFlip, bool debug) async {
+    bool gameEnded = _markPossibleMovesOrEndGame(context: _context);
+    if (_flipping) return;
+    _flipping = true;
     for (var levelPieces in piecesToFlip) {
-      for (var pair in levelPieces)
-        flipPieceStates[pair.first][pair.last].flip();
+      if (levelPieces != null)
+        for (var pair in levelPieces)
+          flipPieceStates[pair.first][pair.last]?.flip();
 
       await Future.delayed(Duration(milliseconds: 100));
     }
     await Future.delayed(Duration(milliseconds: 400));
+    _syncEachPiece(gameEnded, debug);
+    _flipping = false;
   }
 
-  List<List<List<int>>> _getPiecesToFlip(int mainI, int mainJ, int value) {
-    final maxDepth = max(boardHeight, boardLength);
-    int currentI = mainI, currentJ = mainJ, step;
-    bool flipping = true;
-    List<List<List<int>>> piecesToFlip = [];
-    for (int i = -1; i <= 1; i++) {
-      for (int j = -1; j <= 1; j++) {
-        step = 1;
-        flipping = false;
-        for (int k = 0;; k += step) {
-          currentI += step * i;
-          currentJ += step * j;
-          if (k == -1) break;
-          //prevent if any infinite loop happening, even though it should not happen
-          if (k > maxDepth || k < -maxDepth) {
-            print("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-            break;
-          }
-          if (currentI < 0 ||
-              currentI >= boardHeight ||
-              currentJ < 0 ||
-              currentJ >= boardLength ||
-              board[currentI][currentJ] == -1) {
-            step = -1;
-            continue;
-          }
-          if ((step == 1 && board[currentI][currentJ] == value)) {
-            step = -1;
-            flipping = true;
-            continue;
-          }
-          if (step == 1 || !flipping) continue;
-          if (piecesToFlip.length <= k + 1) piecesToFlip.length = k + 1;
-          if (piecesToFlip[k] == null) piecesToFlip[k] = [];
-          piecesToFlip[k].add([currentI, currentJ]);
-        }
+  void _syncEachPiece(bool gameEnded, bool debug) {
+    for (int i = 0; i < _roomData.height; i++)
+      for (int j = 0; j < _roomData.length; j++)
+        pieceStates[i][j]?.set(board[i][j]);
+    makeNextTurn(gameEnded, debug: debug);
+  }
+
+  Future<void> makeNextTurn(bool gameEnded, {bool debug = false}) async {
+    if (debug)
+      log("whiteTurn: ${_roomData.isWhiteTurn}, manualTurn: ${_roomData.isManualTurn}, gameEnded: $gameEnded",
+          name: "makeNextTurn");
+    if (!_roomData.isManualTurn && !gameEnded) {
+      var nextMove = await _roomData.nextTurn;
+      print("is not manual turn, next move: $nextMove");
+      if (nextMove != null && nextMove.length >= 2) {
+        await onTapOnPiece(nextMove[0], nextMove[1], true, debug)(
+            pieceStates[nextMove[0]][nextMove[1]]!);
       }
     }
-    return piecesToFlip;
   }
 }

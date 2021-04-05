@@ -1,33 +1,33 @@
 {
   "project_info": {
-    "project_number": "515886391198",
-    "project_id": "othello-281ce",
-    "storage_bucket": "othello-281ce.appspot.com"
+    "project_number": "733014771219",
+    "project_id": "othello-94686",
+    "storage_bucket": "othello-94686.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:515886391198:android:a63a372056c4453d9f408f",
+        "mobilesdk_app_id": "1:733014771219:android:c750d7cde13d0a78f9a1e6",
         "android_client_info": {
           "package_name": "com.vishnuworld.othello"
         }
       },
       "oauth_client": [
         {
-          "client_id": "515886391198-8g4gths17v8nd22k9m0oerv355ih4tbo.apps.googleusercontent.com",
+          "client_id": "733014771219-9iqdeg1o7kt834dp13a89fos5vc9g89k.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBUivbOJknTDpWW-fOLMoBi0p5JLORgumE"
+          "current_key": "AIzaSyB4uVDXNu89GExfEWpD7131h3yAMhnjdLE"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "515886391198-8g4gths17v8nd22k9m0oerv355ih4tbo.apps.googleusercontent.com",
+              "client_id": "733014771219-9iqdeg1o7kt834dp13a89fos5vc9g89k.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
