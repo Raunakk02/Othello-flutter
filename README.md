@@ -1,4 +1,4 @@
-# othello
+# Othello
 
 A new Flutter application.
 
